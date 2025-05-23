@@ -97,7 +97,8 @@ function useVideoThumbs(videos) {
   return thumbs;
 }
 
-export default function AvatarEditorPage() {
+import dynamic from "next/dynamic";
+const AvatarEditorPage = function AvatarEditorPageImpl() {
   const router = useRouter();
   const { workspaceSlug, avatarId } = router.query;
   const [avatar, setAvatar] = useState(null);
@@ -161,6 +162,8 @@ export default function AvatarEditorPage() {
         draggable: true
       });
     }
+
+export default dynamic(() => Promise.resolve(AvatarEditorPage), { ssr: false });
   }, [postureImage, canvasRatio]);
 
   // 居中素材
