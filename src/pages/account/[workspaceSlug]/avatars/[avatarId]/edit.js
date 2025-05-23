@@ -53,14 +53,48 @@ function useImage(url) {
   return image;
 }
 
+import { useCallback } from 'react';
+
 // 贴纸图片批量加载
 function useStickerImages(stickers) {
-  return useMemo(() => stickers.map(s => useImage(s.url)), [stickers]);
+  const [images, setImages] = useState([]);
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all(stickers.map(s => {
+      return new Promise(resolve => {
+        const img = new window.Image();
+        img.crossOrigin = 'anonymous';
+        img.src = s.url;
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+      });
+    })).then(imgs => {
+      if (isMounted) setImages(imgs);
+    });
+    return () => { isMounted = false; };
+  }, [stickers]);
+  return images;
 }
 
 // 视频缩略图批量加载
 function useVideoThumbs(videos) {
-  return useMemo(() => videos.map(v => useImage(v.thumb)), [videos]);
+  const [thumbs, setThumbs] = useState([]);
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all(videos.map(v => {
+      return new Promise(resolve => {
+        const img = new window.Image();
+        img.crossOrigin = 'anonymous';
+        img.src = v.thumb;
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+      });
+    })).then(imgs => {
+      if (isMounted) setThumbs(imgs);
+    });
+    return () => { isMounted = false; };
+  }, [videos]);
+  return thumbs;
 }
 
 export default function AvatarEditorPage() {
@@ -424,40 +458,37 @@ export default function AvatarEditorPage() {
                   </Group>
                 ))}
                 {/* 视频缩略图 */}
-                {videos.map((v, i) => {
-                  const thumb = useImage(v.thumb);
-                  return (
-                    thumb &&
-                    <Group
-                      key={i}
-                      x={v.x}
-                      y={v.y}
-                      draggable={v.draggable}
-                      onDragEnd={e => {
-                        const newVideos = videos.slice();
-                        newVideos[i] = { ...newVideos[i], x: e.target.x(), y: e.target.y() };
-                        setVideos(newVideos);
-                      }}
-                    >
-                      <KonvaImage
-                        image={thumb}
-                        width={v.width}
-                        height={v.height}
-                      />
-                      <KonvaText
-                        text="▶"
-                        x={v.width / 2 - 12}
-                        y={v.height / 2 - 12}
-                        fontSize={24}
-                        fill="#fff"
-                        fontStyle="bold"
-                        shadowColor="#000"
-                        shadowBlur={4}
-                        shadowOffset={{ x: 1, y: 1 }}
-                      />
-                    </Group>
-                  );
-                })}
+                {videos.map((v, i) => (
+                  videoThumbs[i] &&
+                  <Group
+                    key={i}
+                    x={v.x}
+                    y={v.y}
+                    draggable={v.draggable}
+                    onDragEnd={e => {
+                      const newVideos = videos.slice();
+                      newVideos[i] = { ...newVideos[i], x: e.target.x(), y: e.target.y() };
+                      setVideos(newVideos);
+                    }}
+                  >
+                    <KonvaImage
+                      image={videoThumbs[i]}
+                      width={v.width}
+                      height={v.height}
+                    />
+                    <KonvaText
+                      text="▶"
+                      x={v.width / 2 - 12}
+                      y={v.height / 2 - 12}
+                      fontSize={24}
+                      fill="#fff"
+                      fontStyle="bold"
+                      shadowColor="#000"
+                      shadowBlur={4}
+                      shadowOffset={{ x: 1, y: 1 }}
+                    />
+                  </Group>
+                ))}
                 {/* 姿势图片 */}
                 {postureImage && imageProps && (
                   <KonvaImage
