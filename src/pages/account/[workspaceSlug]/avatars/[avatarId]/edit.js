@@ -98,7 +98,7 @@ function useVideoThumbs(videos) {
 }
 
 import dynamic from "next/dynamic";
-const AvatarEditorPage = function AvatarEditorPageImpl() {
+function AvatarEditorPage() {
   const router = useRouter();
   const { workspaceSlug, avatarId } = router.query;
   const [avatar, setAvatar] = useState(null);
@@ -162,8 +162,6 @@ const AvatarEditorPage = function AvatarEditorPageImpl() {
         draggable: true
       });
     }
-
-export default dynamic(() => Promise.resolve(AvatarEditorPage), { ssr: false });
   }, [postureImage, canvasRatio]);
 
   // 居中素材
@@ -209,25 +207,34 @@ export default dynamic(() => Promise.resolve(AvatarEditorPage), { ssr: false });
         <div style={{ width: 260, background: "#fff", borderRadius: 12, boxShadow: "0 2px 12px #0001", padding: 18, marginLeft: 8, marginTop: 0 }}>
           <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 10 }}>背景素材</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-            {BACKGROUND_TAGS.map(tag => (
-              <span key={tag} style={{
-                padding: "3px 12px",
-                borderRadius: 8,
-                background: tag === "推荐" ? "#2563eb" : "#f3f4f6",
-                color: tag === "推荐" ? "#fff" : "#222",
-                fontSize: 13,
-                fontWeight: tag === "推荐" ? 700 : 500,
-                cursor: "pointer"
-              }}>{tag}</span>
-            ))}
+            {BACKGROUND_TAGS.map(tag => {
+              return (
+                <span
+                  key={tag}
+                  style={{
+                    padding: "3px 12px",
+                    borderRadius: 8,
+                    background: tag === "推荐" ? "#2563eb" : "#f3f4f6",
+                    color: tag === "推荐" ? "#fff" : "#222",
+                    fontSize: 13,
+                    fontWeight: tag === "推荐" ? 700 : 500,
+                    cursor: "pointer"
+                  }}
+                >
+                  {tag}
+                </span>
+              );
+            })}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            {BACKGROUND_LIST.map(bg => (
-              <div key={bg.url} style={{ width: 72, cursor: "pointer" }} onClick={() => handleAddBackground(bg)}>
-                <img src={bg.url} alt={bg.name} style={{ width: 72, height: 40, objectFit: "cover", borderRadius: 8, border: "2px solid #eee" }} />
-                <div style={{ fontSize: 12, color: "#333", textAlign: "center", marginTop: 2 }}>{bg.name}</div>
-              </div>
-            ))}
+            {BACKGROUND_LIST.map(bg => {
+              return (
+                <div key={bg.url} style={{ width: 72, cursor: "pointer" }} onClick={() => handleAddBackground(bg)}>
+                  <img src={bg.url} alt={bg.name} style={{ width: 72, height: 40, objectFit: "cover", borderRadius: 8, border: "2px solid #eee" }} />
+                  <div style={{ fontSize: 12, color: "#333", textAlign: "center", marginTop: 2 }}>{bg.name}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
       );
@@ -583,3 +590,5 @@ export default dynamic(() => Promise.resolve(AvatarEditorPage), { ssr: false });
     </div>
   );
 }
+
+export default dynamic(() => Promise.resolve(AvatarEditorPage), { ssr: false });
