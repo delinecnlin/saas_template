@@ -1,6 +1,5 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState, useRef, useLayoutEffect, useMemo } from 'react';
-import { Stage, Layer, Image as KonvaImage, Text as KonvaText, Group } from 'react-konva';
 
 const CANVAS_RATIOS = [
   { label: "9:16", width: 540, height: 960 },
@@ -99,6 +98,22 @@ function useVideoThumbs(videos) {
 
 import dynamic from "next/dynamic";
 function AvatarEditorPage() {
+  // 动态引入 react-konva 相关组件，避免 SSR require konva
+  const [KonvaComponents, setKonvaComponents] = useState(null);
+
+  useEffect(() => {
+    // 只在客户端加载
+    import('react-konva').then(mod => {
+      setKonvaComponents({
+        Stage: mod.Stage,
+        Layer: mod.Layer,
+        KonvaImage: mod.Image,
+        KonvaText: mod.Text,
+        Group: mod.Group,
+      });
+    });
+  }, []);
+
   const router = useRouter();
   const { workspaceSlug, avatarId } = router.query;
   const [avatar, setAvatar] = useState(null);
@@ -300,6 +315,9 @@ function AvatarEditorPage() {
 
   if (loading) return <div className="p-8">加载中...</div>;
   if (!avatar) return <div className="p-8 text-red-500">未找到该数字人</div>;
+  if (!KonvaComponents) return <div className="p-8">正在加载画布组件...</div>;
+
+  const { Stage, Layer, KonvaImage, KonvaText, Group } = KonvaComponents;
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column" }}>
