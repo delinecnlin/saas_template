@@ -37,27 +37,29 @@ jobs:
         with:
           node-version: '22.x'
 
+      - name: Generate .env file for Oryx build
+        run: |
+          echo "APP_URL=${{ secrets.APP_URL }}" >> .env
+          echo "NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}" >> .env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+          echo "EMAIL_FROM=${{ secrets.EMAIL_FROM }}" >> .env
+          echo "EMAIL_SERVER_USER=${{ secrets.EMAIL_SERVER_USER }}" >> .env
+          echo "EMAIL_SERVER_PASSWORD=${{ secrets.EMAIL_SERVER_PASSWORD }}" >> .env
+          echo "EMAIL_SERVER_HOST=${{ secrets.EMAIL_SERVER_HOST }}" >> .env
+          echo "EMAIL_SERVER_PORT=${{ secrets.EMAIL_SERVER_PORT }}" >> .env
+          echo "EMAIL_SERVER_SECURE=${{ secrets.EMAIL_SERVER_SECURE }}" >> .env
+          echo "EMAIL_SERVICE=${{ secrets.EMAIL_SERVICE }}" >> .env
+          echo "NEXT_PUBLIC_VERCEL_IP_ADDRESS=${{ secrets.NEXT_PUBLIC_VERCEL_IP_ADDRESS }}" >> .env
+          echo "VERCEL_API_URL=${{ secrets.VERCEL_API_URL }}" >> .env
+          echo "ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}" >> .env
+          echo "XIAOBING_API_KEY=${{ secrets.XIAOBING_API_KEY }}" >> .env
+          echo "WECHAT_CLIENT_ID=${{ secrets.WECHAT_CLIENT_ID }}" >> .env
+          echo "WECHAT_CLIENT_SECRET=${{ secrets.WECHAT_CLIENT_SECRET }}" >> .env
+          echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+          echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+
       - name: Install dependencies
         run: npm install
-        env:
-          APP_URL: ${{ secrets.APP_URL }}
-          NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-          EMAIL_SERVER_USER: ${{ secrets.EMAIL_SERVER_USER }}
-          EMAIL_SERVER_PASSWORD: ${{ secrets.EMAIL_SERVER_PASSWORD }}
-          EMAIL_SERVER_HOST: ${{ secrets.EMAIL_SERVER_HOST }}
-          EMAIL_SERVER_PORT: ${{ secrets.EMAIL_SERVER_PORT }}
-          EMAIL_SERVER_SECURE: ${{ secrets.EMAIL_SERVER_SECURE }}
-          EMAIL_SERVICE: ${{ secrets.EMAIL_SERVICE }}
-          NEXT_PUBLIC_VERCEL_IP_ADDRESS: ${{ secrets.NEXT_PUBLIC_VERCEL_IP_ADDRESS }}
-          VERCEL_API_URL: ${{ secrets.VERCEL_API_URL }}
-          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
-          XIAOBING_API_KEY: ${{ secrets.XIAOBING_API_KEY }}
-          WECHAT_CLIENT_ID: ${{ secrets.WECHAT_CLIENT_ID }}
-          WECHAT_CLIENT_SECRET: ${{ secrets.WECHAT_CLIENT_SECRET }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
 
       - name: Build Next.js app
         run: npm run build
