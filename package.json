@@ -34,6 +34,7 @@
     "react-hot-toast": "^2.4.0",
     "react-i18next": "^13.3.0",
     "react-konva": "^18.2.10",
+    "konva": "^9.0.0",
     "react-topbar-progress-indicator": "^4.1.1",
     "slugify": "^1.6.5",
     "stripe": "^10.13.0",
