@@ -79,9 +79,7 @@ jobs:
           name: node-app
 
       - name: Unzip artifact for deployment
-        run: |
-          rm -rf ./*
-          unzip ../release.zip
+        run: unzip release.zip
 
       - name: Install production dependencies
         run: npm ci --only=production
