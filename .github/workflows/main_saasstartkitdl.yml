@@ -26,6 +26,7 @@ jobs:
       - name: Build and prepare deployment
         env:
           APP_URL: ${{ secrets.APP_URL }}
+          NEXTAUTH_URL: ${{ secrets.APP_URL }}
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
@@ -44,11 +45,20 @@ jobs:
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
         run: |
+          # Install all dependencies
           npm ci
+
+          # Generate prisma client
           npx prisma generate
+
+          # Build Next.js application
           npm run build
+
+          # Prepare deployment package with build artifacts
           mkdir deploy-dist
-          cp -r .next node_modules/@prisma/client node_modules/prisma prisma public package.json package-lock.json next.config.js deploy-dist/
+          cp -r .next prisma node_modules public package.json package-lock.json next.config.js deploy-dist/
+
+          # Create deployment archive
           cd deploy-dist
           zip -r ../release.zip .
           cd ..
@@ -92,3 +102,4 @@ jobs:
           app-name: 'saasstartkitdl'
           slot-name: 'Production'
           package: .
+          startup-command: npm start
