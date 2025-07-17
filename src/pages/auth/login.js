@@ -39,14 +39,22 @@ const Login = () => {
 
   useEffect(() => {
     (async () => {
-      const socialProviders = [];
-      const { email, ...providers } = await getProviders();
+      const allProviders = await getProviders();
+      const socialProvidersArray = [];
 
-      for (const provider in providers) {
-        socialProviders.push(providers[provider]);
+      if (allProviders) {
+        const { email: emailProvider, ...providers } = allProviders;
+
+        if (emailProvider) {
+          socialProvidersArray.push(emailProvider);
+        }
+
+        for (const providerId in providers) {
+          socialProvidersArray.push(providers[providerId]);
+        }
       }
 
-      setSocialProviders([...socialProviders]);
+      setSocialProviders(socialProvidersArray);
     })();
   }, []);
 

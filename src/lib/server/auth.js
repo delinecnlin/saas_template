@@ -1,7 +1,7 @@
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import EmailProvider from 'next-auth/providers/email';
 import GoogleProvider from 'next-auth/providers/google';
-import WeChatProvider from 'next-auth/providers/wechat';
+import { WeChatProvider } from '@next-auth-oauth/wechat';
 
 import prisma from '@/prisma/index';
 import { html, text } from '@/config/email-templates/signin';
