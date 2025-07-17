@@ -161,3 +161,75 @@ enum TeamRole {
   MEMBER
   OWNER
 }
+
+model Child {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  birthDate   DateTime
+  preferences Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user       User         @relation(fields: [userId], references: [id])
+  sessions   ChatSession[]
+  stories    Story[]
+
+  @@index([userId])
+  @@map("children")
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  childId   String
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+
+  child    Child        @relation(fields: [childId], references: [id])
+  messages ChatMessage[]
+
+  @@index([childId])
+  @@map("chatSessions")
+}
+
+model ChatMessage {
+  id           String   @id @default(cuid())
+  chatSessionId String
+  sender       MessageSender
+  content      String
+  createdAt    DateTime @default(now())
+  memoryRef    String?
+
+  session ChatSession @relation(fields: [chatSessionId], references: [id])
+
+  @@index([chatSessionId])
+  @@map("chatMessages")
+}
+
+model Story {
+  id            String   @id @default(cuid())
+  childId       String
+  title         String
+  content       String
+  status        StoryStatus @default(DRAFT)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  parentStoryId String?
+
+  child       Child  @relation(fields: [childId], references: [id])
+  parentStory Story? @relation("StoryHierarchy", fields: [parentStoryId], references: [id])
+  chapters    Story[] @relation("StoryHierarchy")
+
+  @@index([childId])
+  @@map("stories")
+}
+
+enum MessageSender {
+  child
+  ai
+}
+
+enum StoryStatus {
+  DRAFT
+  PUBLISHED
+}
