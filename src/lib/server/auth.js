@@ -2,7 +2,6 @@ import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import EmailProvider from 'next-auth/providers/email';
 import GoogleProvider from 'next-auth/providers/google';
-import { WeChatProvider } from '@next-auth-oauth/wechat';
 
 import prisma from '@/prisma/index';
 import { html, text } from '@/config/email-templates/signin';
@@ -91,10 +90,6 @@ export const authOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
-    WeChatProvider({
-      clientId: process.env.WECHAT_CLIENT_ID,
-      clientSecret: process.env.WECHAT_CLIENT_SECRET,
     }),
   ],
   secret: process.env.NEXTAUTH_SECRET || null,

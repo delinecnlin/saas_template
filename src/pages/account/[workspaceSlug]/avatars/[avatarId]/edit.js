@@ -1,6 +1,11 @@
 import { useRouter } from 'next/router';
 import { useEffect, useState, useRef, useLayoutEffect, useMemo } from 'react';
-import { Stage, Layer, Image as KonvaImage, Text as KonvaText, Group } from 'react-konva';
+import dynamic from 'next/dynamic';
+const Stage = dynamic(() => import('react-konva').then(mod => mod.Stage), { ssr: false });
+const Layer = dynamic(() => import('react-konva').then(mod => mod.Layer), { ssr: false });
+const KonvaImage = dynamic(() => import('react-konva').then(mod => mod.Image), { ssr: false });
+const KonvaText = dynamic(() => import('react-konva').then(mod => mod.Text), { ssr: false });
+const Group = dynamic(() => import('react-konva').then(mod => mod.Group), { ssr: false });
 
 const CANVAS_RATIOS = [
   { label: "9:16", width: 540, height: 960 },
@@ -97,7 +102,7 @@ function useVideoThumbs(videos) {
   return thumbs;
 }
 
-export default function AvatarEditorPage() {
+function AvatarEditorPage() {
   const router = useRouter();
   const { workspaceSlug, avatarId } = router.query;
   const [avatar, setAvatar] = useState(null);
@@ -580,3 +585,5 @@ export default function AvatarEditorPage() {
     </div>
   );
 }
+
+export default dynamic(() => Promise.resolve(AvatarEditorPage), { ssr: false });

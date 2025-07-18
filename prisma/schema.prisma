@@ -14,17 +14,16 @@ model Account {
   type               String
   provider           String
   providerAccountId  String
-  refresh_token      String? @db.Text
-  access_token       String? @db.Text
+  refresh_token      String?
+  access_token       String?
   expires_at         Int?
   token_type         String?
   scope              String?
-  id_token           String? @db.Text
+  id_token           String?
   session_state      String?
   oauth_token_secret String?
   oauth_token        String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -39,8 +38,7 @@ model CustomerPayment {
   createdAt        DateTime?        @default(now())
   deletedAt        DateTime?
   updatedAt        DateTime?        @updatedAt
-
-  customer User @relation(fields: [customerId], references: [id])
+  customer         User             @relation(fields: [customerId], references: [id])
 
   @@map("customerPayments")
 }
@@ -50,34 +48,32 @@ model Domain {
   workspaceId String
   addedById   String
   name        String
-  subdomain   String?
-  verified    Boolean?  @default(true)
-  value       String?
   createdAt   DateTime? @default(now())
   deletedAt   DateTime?
   updatedAt   DateTime? @updatedAt
-
-  addedBy   User      @relation(fields: [addedById], references: [id])
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  subdomain   String?
+  value       String?
+  verified    Boolean?  @default(true)
+  addedBy     User      @relation(fields: [addedById], references: [id])
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
 
   @@map("domains")
 }
 
 model Member {
-  id          String    @id @default(cuid())
+  id          String           @id @default(cuid())
   workspaceId String
   email       String
   inviter     String
-  invitedAt   DateTime? @default(now())
+  invitedAt   DateTime?        @default(now())
   joinedAt    DateTime?
   deletedAt   DateTime?
-  updatedAt   DateTime? @updatedAt
-
-  status    InvitationStatus @default(PENDING)
-  teamRole  TeamRole         @default(MEMBER)
-  member    User?            @relation(fields: [email], references: [email], name: "membership")
-  invitedBy User?            @relation(fields: [inviter], references: [email], name: "inviter")
-  workspace Workspace        @relation(fields: [workspaceId], references: [id])
+  updatedAt   DateTime?        @updatedAt
+  status      InvitationStatus @default(PENDING)
+  teamRole    TeamRole         @default(MEMBER)
+  member      User             @relation("membership", fields: [email], references: [email])
+  invitedBy   User             @relation("inviter", fields: [inviter], references: [email])
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id])
 
   @@unique([workspaceId, email])
   @@map("members")
@@ -88,30 +84,28 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
 
 model User {
-  id            String    @id @default(cuid())
-  userCode      String    @unique @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  createdAt     DateTime? @default(now())
-  deletedAt     DateTime?
-  updatedAt     DateTime? @updatedAt
-
+  id               String           @id @default(cuid())
+  userCode         String           @unique @default(cuid())
+  name             String?
+  email            String?          @unique
+  emailVerified    DateTime?
+  image            String?
+  createdAt        DateTime?        @default(now())
+  deletedAt        DateTime?
+  updatedAt        DateTime?        @updatedAt
   accounts         Account[]
-  sessions         Session[]
-  membership       Member[]         @relation("membership")
-  invitedMembers   Member[]         @relation("inviter")
-  createdWorkspace Workspace[]
   customerPayment  CustomerPayment?
   domains          Domain[]
+  membership       Member[]         @relation("membership")
+  invitedMembers   Member[]         @relation("inviter")
+  sessions         Session[]
+  createdWorkspace Workspace[]
 
   @@unique([userCode, email])
   @@map("users")
@@ -136,10 +130,9 @@ model Workspace {
   createdAt     DateTime? @default(now())
   deletedAt     DateTime?
   updatedAt     DateTime? @updatedAt
-
-  creator User     @relation(fields: [creatorId], references: [id], onDelete: Cascade)
-  members Member[]
-  domains Domain[]
+  domains       Domain[]
+  members       Member[]
+  creator       User      @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
   @@unique([workspaceCode, inviteCode])
   @@map("workspaces")
@@ -160,76 +153,4 @@ enum SubscriptionType {
 enum TeamRole {
   MEMBER
   OWNER
-}
-
-model Child {
-  id          String   @id @default(cuid())
-  userId      String
-  name        String
-  birthDate   DateTime
-  preferences Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user       User         @relation(fields: [userId], references: [id])
-  sessions   ChatSession[]
-  stories    Story[]
-
-  @@index([userId])
-  @@map("children")
-}
-
-model ChatSession {
-  id        String   @id @default(cuid())
-  childId   String
-  startedAt DateTime @default(now())
-  endedAt   DateTime?
-
-  child    Child        @relation(fields: [childId], references: [id])
-  messages ChatMessage[]
-
-  @@index([childId])
-  @@map("chatSessions")
-}
-
-model ChatMessage {
-  id           String   @id @default(cuid())
-  chatSessionId String
-  sender       MessageSender
-  content      String
-  createdAt    DateTime @default(now())
-  memoryRef    String?
-
-  session ChatSession @relation(fields: [chatSessionId], references: [id])
-
-  @@index([chatSessionId])
-  @@map("chatMessages")
-}
-
-model Story {
-  id            String   @id @default(cuid())
-  childId       String
-  title         String
-  content       String
-  status        StoryStatus @default(DRAFT)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  parentStoryId String?
-
-  child       Child  @relation(fields: [childId], references: [id])
-  parentStory Story? @relation("StoryHierarchy", fields: [parentStoryId], references: [id])
-  chapters    Story[] @relation("StoryHierarchy")
-
-  @@index([childId])
-  @@map("stories")
-}
-
-enum MessageSender {
-  child
-  ai
-}
-
-enum StoryStatus {
-  DRAFT
-  PUBLISHED
 }
