@@ -12,7 +12,7 @@ import progressBarConfig from '@/config/progress-bar/index';
 import swrConfig from '@/config/swr/index';
 import WorkspaceProvider from '@/providers/workspace';
 
-import '@/styles/globals.css';
+import '../styles/globals.css';
 let rawdata = require('../messages/en.json');
 
 let langCode = "en"
