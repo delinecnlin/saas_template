@@ -112,6 +112,7 @@ model User {
   createdWorkspace Workspace[]
   customerPayment  CustomerPayment?
   domains          Domain[]
+  stories          Story[]
 
   @@unique([userCode, email])
   @@map("users")
@@ -160,4 +161,20 @@ enum SubscriptionType {
 enum TeamRole {
   MEMBER
   OWNER
+}
+
+model Story {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  content   String
+  status    String   @default("draft")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  parentStoryId String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("stories")
 }

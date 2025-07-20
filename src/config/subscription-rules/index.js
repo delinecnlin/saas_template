@@ -7,6 +7,8 @@ const rules = {
     workspaces: 1,
     // 新增：数字人功能开关
     hasAvatarFeature: false,
+    // 故事生成功能
+    hasStoryFeature: true,
   },
   [SubscriptionType.STANDARD]: {
     customDomains: 3,
@@ -14,6 +16,7 @@ const rules = {
     workspaces: 5,
     // 新增：数字人功能开关
     hasAvatarFeature: true,
+    hasStoryFeature: true,
   },
   [SubscriptionType.PREMIUM]: {
     customDomains: 5,
@@ -21,6 +24,7 @@ const rules = {
     workspaces: 10,
     // 新增：数字人功能开关
     hasAvatarFeature: true,
+    hasStoryFeature: true,
   },
 };
 
