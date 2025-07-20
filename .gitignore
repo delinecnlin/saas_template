@@ -51,7 +51,7 @@ prisma/test.db
 .LSOverride
 
 # Optional lock files (keep only one if you use both)
-# yarn.lock
+yarn.lock
 # package-lock.json
 
 # Others
