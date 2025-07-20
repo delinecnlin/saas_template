@@ -49,28 +49,28 @@ Read the [docs](https://docs.nextacular.co) for more details
 
 ### Primary
 
-- [Next.JS](https://nextjs.org) - **13.1.0** (React **18.2.0**)
-- [Tailwind CSS](https://tailwindcss.com) - **3.1.8**
-- [Prisma](https://prisma.io) - **4.4.0**
+- [Next.JS](https://nextjs.org) - **15.4.2** (React **19.1.0**)
+- [Tailwind CSS](https://tailwindcss.com) - **4.1.11**
+- [Prisma](https://prisma.io) - **6.12.0**
 - [Vercel](https://vercel.com)
 
 ## Dependencies
 
-- Headless UI - 1.7.7
-- Hero Icons - 2.0.12
-- Date FNS - 2.29.3
-- Express Validator - 6.14.2
-- Micro - 9.4.1
-- Next Themes - 0.2.1
-- Nodemailer - 6.8.0
+- Headless UI - 2.2.4
+- Hero Icons - 2.2.0
+- Date FNS - 4.1.0
+- Express Validator - 7.2.1
+- Micro - 10.0.1
+- Next Themes - 0.4.6
+- Nodemailer - 7.0.5
 - React Copy to Clipboard - 5.1.0
 - React Google Analytics - 3.3.1
-- React Hot Toast - 2.4.0
+- React Hot Toast - 2.5.2
 - React Top Bar Progress Indicator - 4.1.1
-- Slugify - 1.6.5
-- Stripe - 10.13.0
-- SWR - 1.3.0
-- Validator - 13.7.0
+- Slugify - 1.6.6
+- Stripe - 18.3.0
+- SWR - 2.3.4
+- Validator - 13.15.15
 
 ## Built With Nextacular
 
