@@ -5,16 +5,22 @@ const rules = {
     customDomains: 1,
     members: 1,
     workspaces: 1,
+    // 新增：数字人功能开关
+    hasAvatarFeature: false,
   },
   [SubscriptionType.STANDARD]: {
     customDomains: 3,
     members: 5,
     workspaces: 5,
+    // 新增：数字人功能开关
+    hasAvatarFeature: true,
   },
   [SubscriptionType.PREMIUM]: {
     customDomains: 5,
     members: 10,
     workspaces: 10,
+    // 新增：数字人功能开关
+    hasAvatarFeature: true,
   },
 };
 
