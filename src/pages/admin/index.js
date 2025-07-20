@@ -12,7 +12,7 @@ export default function AdminPage() {
   const { data } = useSWR(session?.user?.isAdmin ? '/api/admin/users' : null, fetcher);
 
   useEffect(() => {
-    if (status === 'unauthenticated') router.replace('/admin/login');
+    if (status === 'unauthenticated') router.replace('/auth/login');
     if (status === 'authenticated' && !session?.user?.isAdmin) router.replace('/');
   }, [status, session]);
 
