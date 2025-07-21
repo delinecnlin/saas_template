@@ -112,6 +112,7 @@ model User {
   createdWorkspace Workspace[]
   customerPayment  CustomerPayment?
   domains          Domain[]
+  Child            Child[]
 
   @@unique([userCode, email])
   @@map("users")
@@ -143,6 +144,62 @@ model Workspace {
 
   @@unique([workspaceCode, inviteCode])
   @@map("workspaces")
+}
+
+model Child {
+  id          String         @id @default(cuid())
+  userId      String
+  name        String
+  birthDate   DateTime
+  preferences Json
+  createdAt   DateTime       @default(now())
+  sessions    StorySession[]
+  stories     Story[]
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model StorySession {
+  id        String         @id @default(cuid())
+  childId   String
+  startedAt DateTime       @default(now())
+  endedAt   DateTime?
+  messages  StoryMessage[]
+
+  child Child @relation(fields: [childId], references: [id])
+
+  @@index([childId])
+}
+
+model StoryMessage {
+  id        String   @id @default(cuid())
+  sessionId String
+  sender    String
+  content   String
+  createdAt DateTime @default(now())
+  memoryRef String?
+
+  session StorySession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+}
+
+model Story {
+  id            String   @id @default(cuid())
+  childId       String
+  title         String
+  content       String
+  status        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  parentStoryId String?
+  child         Child    @relation(fields: [childId], references: [id])
+  parent        Story?   @relation("StoryParent", fields: [parentStoryId], references: [id])
+  children      Story[]  @relation("StoryParent")
+
+  @@index([childId])
 }
 
 enum InvitationStatus {
