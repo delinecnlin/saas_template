@@ -36,6 +36,9 @@ const AccountLayout = ({ children }) => {
         if (item.name === '数字人') {
           return permissions.hasAvatarFeature;
         }
+        if (item.name === '儿童故事') {
+          return permissions.hasStoryFeature;
+        }
         return true;
       });
     }

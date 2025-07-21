@@ -15,6 +15,10 @@ const menu = (workspaceId) => [
         path: `/account/${workspaceId}/projects`,
       },
       {
+        name: '儿童故事',
+        path: `/account/${workspaceId}/stories`,
+      },
+      {
         name: 'common.label.integrations',
         path: `/account/${workspaceId}/integrations`,
       },
