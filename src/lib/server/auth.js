@@ -15,6 +15,7 @@ export const authOptions = {
       if (session.user) {
         const customerPayment = await getPayment(user.email);
         session.user.userId = user.id;
+        session.user.id = user.id;
 
         if (customerPayment) {
           session.user.subscription = customerPayment.subscriptionType;
