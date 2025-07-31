@@ -2,37 +2,91 @@
 
 ![Open Collective backers and sponsors](https://img.shields.io/opencollective/all/nextacular) ![GitHub package.json version](https://img.shields.io/github/package-json/v/nextacular/nextacular) ![GitHub issues](https://img.shields.io/github/issues/nextacular/nextacular) ![GitHub](https://img.shields.io/github/license/nextacular/nextacular) ![GitHub Repo stars](https://img.shields.io/github/stars/nextacular/nextacular?style=social)
 
-## Quickly launch multi-tenant SaaS applications
+## 快速启动您的多租户 SaaS 应用
 
-![Nextacular - Quickly launch multi-tenant SaaS applications](./public/images/seo-cover.png)
+![Nextacular - 快速启动您的多租户 SaaS 应用](./public/images/seo-cover.png)
 
-An open-source starter kit that will help you build full-stack multi-tenant SaaS platforms efficiently and help you focus on developing your core SaaS features. Built on top of popular and modern technologies such as Next JS, Tailwind, and Prisma
+一个开源的入门套件，可以帮助您高效地构建全栈多租户 SaaS 平台，让您专注于开发核心的 SaaS 功能。基于 Next JS、Tailwind CSS 和 Prisma 等流行和现代的技术构建。
 
-**Features** packaged out-of-the-box: **Authentication**, **Billing & Payment**, **Database**, **Email**, **Custom Domains**, **Multi-tenancy**, **Workspaces**, and **Teams**
+**开箱即用的功能**: **认证**、**计费与支付**、**数据库**、**邮件服务**、**自定义域名**、**多租户**、**工作区**和**团队**。
 
-## Live Demo
+## 在线演示
 
-Nextacular Demo: [https://demo.nextacular.co](https://demo.nextacular.co)
+Nextacular 演示: [https://demo.nextacular.co](https://demo.nextacular.co)
 
-## Documentation
+## 文档
 
-Nextacular Documentation: [https://docs.nextacular.co](https://docs.nextacular.co)
+Nextacular 文档: [https://docs.nextacular.co](https://docs.nextacular.co)
 
-## Getting Started
+## 快速开始
 
-Read the quick start here: [https://docs.nextacular.co/getting-started/quick-start](https://docs.nextacular.co/getting-started/quick-start)
+请在此处阅读快速入门指南: [https://docs.nextacular.co/getting-started/quick-start](https://docs.nextacular.co/getting-started/quick-start)
 
-## One-Click Deploy to Vercel 🚀
+## 本地开发和测试
 
-Deploy to Vercel for free!
+### 1. 环境准备
+
+首先，克隆本仓库到您的本地机器：
+
+```bash
+git clone https://github.com/delinecnlin/saas_template.git
+cd saas_template
+```
+
+### 2. 安装依赖
+
+使用 `npm` 安装项目所需的所有依赖项：
+
+```bash
+npm install
+```
+
+安装完成后，`postinstall` 脚本会自动运行 `prisma generate` 来生成 Prisma 客户端。
+
+### 3. 配置环境变量
+
+复制 `.env.sample` 文件来创建一个新的 `.env` 文件，并根据您的本地环境配置（如数据库连接字符串、Stripe 密钥等）填写必要的环境变量。
+
+```bash
+cp .env.sample .env
+```
+
+### 4. 数据库迁移和填充
+
+运行以下命令来应用数据库迁移，并使用种子数据填充数据库：
+
+```bash
+npx prisma migrate dev
+npx prisma db seed
+```
+
+### 5. 启动开发服务器
+
+现在，您可以启动本地开发服务器：
+
+```bash
+npm run dev
+```
+
+应用将在 `http://localhost:3000` 上运行。
+
+### 6. 其他常用命令
+
+- **构建生产版本**: `npm run build`
+- **启动生产服务器**: `npm run start`
+- **代码风格检查**: `npm run lint`
+
+## 一键部署到 Vercel 🚀
+
+免费部署到 Vercel！
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fnextacular%2Fnextacular&env=APP_URL,NEXTAUTH_SECRET,DATABASE_URL,SHADOW_DATABASE_URL,EMAIL_FROM,EMAIL_SERVER_USER,EMAIL_SERVER_PASSWORD,EMAIL_SERVICE,NEXT_PUBLIC_VERCEL_IP_ADDRESS&project-name=nextacular&repo-name=nextacular&demo-title=Nextacular%20-%20Your%20Next%20SaaS%20Project&demo-description=Nextacular%20is%20an%20open-source%20starter%20kit%20that%20will%20help%20you%20build%20SaaS%20platforms%20efficiently%20and%20focus%20on%20developing%20your%20core%20SaaS%20features.&demo-url=https%3A%2F%2Fdemo.nextacular.co&demo-image=https%3A%2F%2Fnextacular.co%2Fimages%2Fseo-cover.png)
 
-You might encounter errors after deployment, so make sure you add the necessary [Environment Variables](https://docs.nextacular.co/customization/environment-variables)
+部署后可能会遇到错误，请确保您已添加所有必要的[环境变量](https://docs.nextacular.co/customization/environment-variables)。
 
-Read the [docs](https://docs.nextacular.co) for more details
+更多详情请阅读[文档](https://docs.nextacular.co)。
 
-### 功能开发指南 (Feature Development Guide)
+### 功能开发指南
 
 本文档旨在指导开发者如何在本项目中添加新的、且受用户订阅计划限制的功能。
 
@@ -82,11 +136,9 @@ Read the [docs](https://docs.nextacular.co) for more details
     const canAccessAvatars = await hasPermission(req, 'hasAvatarFeature');
     if (!canAccessAvatars) {
       // 如果无权访问，返回 403 禁止访问错误
-      res
-        .status(403)
-        .json({
-          error: 'Your current plan does not have access to this feature.',
-        });
+      res.status(403).json({
+        error: 'Your current plan does not have access to this feature.',
+      });
       return;
     }
 
@@ -124,29 +176,29 @@ Read the [docs](https://docs.nextacular.co) for more details
 
 遵循以上步骤，您就可以安全、规范地为项目添加更多需要付费解锁的强大功能。
 
-## Outstanding Features
+## 核心功能
 
-- 🔐 Authentication
-- 💿 Database Integration + Prisma (SQL/PostgreSQL)
-- 🤝 Teams & Workspaces
-- ☁ Multi-tenancy Approach
-- 📜 Landing Page
-- 💸 Billing & Subscription
-- 📱 Simple Design Components & Mobile-ready
-- 🔍 SEO Support
-- 👾 Developer Experience
-- 💌 Email Handling
+- 🔐 认证
+- 💿 数据库集成 + Prisma (SQL/PostgreSQL)
+- 🤝 团队 & 工作区
+- ☁️ 多租户架构
+- 📜 落地页
+- 💸 计费 & 订阅
+- 📱 简约设计组件 & 移动端适配
+- 🔍 SEO 支持
+- 👾 开发者体验
+- 💌 邮件处理
 
-## Tech Stack
+## 技术栈
 
-### Primary
+### 主要技术
 
 - [Next.JS](https://nextjs.org) - **15.4.2** (React **19.1.0**)
 - [Tailwind CSS](https://tailwindcss.com) - **4.1.11**
 - [Prisma](https://prisma.io) - **6.12.0**
 - [Vercel](https://vercel.com)
 
-## Dependencies
+## 依赖项
 
 - Headless UI - 2.2.4
 - Hero Icons - 2.2.0
@@ -164,9 +216,9 @@ Read the [docs](https://docs.nextacular.co) for more details
 - SWR - 2.3.4
 - Validator - 13.15.15
 
-## Built With Nextacular
+## 使用 Nextacular 构建的项目
 
-Check out these amazing projects built with Nextacular:
+查看这些使用 Nextacular 构建的优秀项目:
 
 1. [Nextacular Demo](https://demo.nextacular.co) by Nextacular
 2. [Livebic](https://livebic.com/) by Shadrach
@@ -177,51 +229,51 @@ Check out these amazing projects built with Nextacular:
 7. [BuzzBonus](https://buzzbonus.tech) by Ram (@rapturt9)
 8. [MediumFox](https://mediumfox.com) by CSK (@medfox_73823)
 
-> If you have a project built with Nextacular and want to be listed, feel free to reach out to us through our Discord server.
+> 如果您的项目也是用 Nextacular 构建的，并希望被列出，请随时通过我们的 Discord 服务器与我们联系。
 
-## Reviews
+## 评价
 
-> Steven Tey - Developer, Vercel
-> It's going to be super helpful for folks to bootstrap their MVPs and get to market faster!
+> Steven Tey - Vercel 开发者
+> 这对于帮助人们启动他们的 MVP 并更快地推向市场非常有帮助！
 >
-> **Positive company mission**, **Easy to use**, **Cost-effective**, **Strong feature set**
+> **积极的公司使命**、**易于使用**、**成本效益高**、**功能强大**
 
-## Company Sponsors
+## 公司赞助商
 
 ## Vercel
 
 [![Powered by Vercel](./public/images/powered-by-vercel.svg)](https://vercel.com/?utm_source=nextacular&utm_campaign=oss)
 
-### GitBook - Documentation Sponsor
+### GitBook - 文档赞助商
 
 [![GitBook](https://www.vectorlogo.zone/logos/gitbook/gitbook-ar21.svg)](https://gitbook.com)
 
-Your company name could be here. If you wish to be listed as a sponsor, reach out to [teamnextacular@gmail.com](mailto:teamnextacular.com)
+您的公司名称也可以出现在这里。如果您希望成为赞助商，请联系 [teamnextacular@gmail.com](mailto:teamnextacular.com)
 
-## Contributing
+## 贡献
 
-Want to support this project?
+想要支持这个项目吗？
 
-1. Consider purchasing from our marketplace (soon)
-2. Subscribe to our newsletter. We send out tips and tools for you to try out while building your SaaS
-3. If you represent company, consider becoming a recurring sponsor for this repository
-4. Submit issues and features. Fork the project. Give it some stars. Join the discussion
-5. Share Nextacular with your network
+1. 考虑从我们的市场购买（即将推出）
+2. 订阅我们的新闻通讯。我们会发送一些技巧和工具供您在构建 SaaS 时尝试
+3. 如果您代表公司，请考虑成为本仓库的定期赞助商
+4. 提交问题和功能建议。Fork 本项目。给它点亮星星。加入讨论
+5. 与您的网络分享 Nextacular
 
-> Read the [guidelines](CONTRIBUTING.md) for contributing
+> 阅读[贡献指南](CONTRIBUTING.md)
 
-## License
+## 许可证
 
-All code in this repository is provided under the [MIT License](LICENSE)
+本仓库中的所有代码均根据 [MIT 许可证](LICENSE) 提供
 
-## Supporters – Special Mention 🎉 Thank you!
+## 支持者 – 特别鸣谢 🎉 谢谢！
 
-Show some love and support, and be a backer of our project
+请表达您的喜爱和支持，成为我们项目的支持者
 
 [![Open Collective](https://www.vectorlogo.zone/logos/opencollective/opencollective-ar21.svg)](https://opencollective.com/nextacular)
 
 Kaur Kirikall ([@KaurKirikall](https://twitter.com/KaurKirikall)), Brian Roach, Cien Lim, Chris Moutsos, Fred Guth ([@fredguth](https://twitter.com/fredguth)), Maxence Rose ([@pirmax](https://twitter.com/pirmax)) Sandeep Kumar ([@deepsand](https://twitter.com/deepsand)), Justin Harr ([@DasBeasto](https://twitter.com/dasbeasto)), Saket Tawde ([@SaketCodes](https://twitter.com/SaketCodes)), Corey Kellgren, Adarsh Tadimari, Altamir Meister, Abhi Ksinha
 
-## Acknowledgement
+## 致谢
 
-🙏 Happy to have the support of early adopters and supporters over at [Product Hunt](https://www.producthunt.com/posts/nextacular), [Gumroad](https://arjayosma.gumroad.com/l/nextacular), [Github](https://github.com/nextacular/nextacular), [Twitter](https://twitter.com/nextacular), and through personal email. Lots of plans moving forward. Thanks to you guys!
+🙏 很高兴得到早期采用者和支持者在 [Product Hunt](https://www.producthunt.com/posts/nextacular)、[Gumroad](https://arjayosma.gumroad.com/l/nextacular)、[Github](https://github.com/nextacular/nextacular)、[Twitter](https://twitter.com/nextacular) 以及通过个人电子邮件的支持。未来还有很多计划。感谢大家！
