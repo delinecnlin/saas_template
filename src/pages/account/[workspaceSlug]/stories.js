@@ -3,6 +3,7 @@ import { useRouter } from 'next/router';
 import AccountLayout from '@/layouts/AccountLayout';
 import XiaoiceChat from '@/components/XiaoiceChat';
 import RealtimeChat from '@/components/RealtimeChat';
+import TextChat from '@/components/TextChat';
 
 function StoriesPage() {
   const router = useRouter();
@@ -46,7 +47,7 @@ function StoriesPage() {
         </div>
       </div>
       {activeChat === 'normal' && (
-        <div className="mb-4 p-4 border rounded">Normal Chat Panel</div>
+        <div className="mb-4 p-4 border rounded"><TextChat /></div>
       )}
       {activeChat === 'digital' && (
         <div className="mb-4 p-4 border rounded">
