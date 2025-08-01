@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import AccountLayout from '@/layouts/AccountLayout';
+import XiaoiceChat from '@/components/XiaoiceChat';
 
 function StoriesPage() {
   const router = useRouter();
@@ -47,7 +48,9 @@ function StoriesPage() {
         <div className="mb-4 p-4 border rounded">Normal Chat Panel</div>
       )}
       {activeChat === 'digital' && (
-        <div className="mb-4 p-4 border rounded">Digital Human Chat Panel</div>
+        <div className="mb-4 p-4 border rounded">
+          <XiaoiceChat />
+        </div>
       )}
       {activeChat === 'voice' && (
         <div className="mb-4 p-4 border rounded">Realtime Voice Chat Panel</div>
