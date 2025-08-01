@@ -3,12 +3,15 @@ import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { useTranslation } from "react-i18next";
+import XiaoiceChat from '@/components/XiaoiceChat';
 
 const Hero = () => {
   const { status: sessionStatus } = useSession();
   const [showMenu, setMenuVisibility] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   const toggleMenu = () => setMenuVisibility(!showMenu);
+  const handleDemoClick = () => setShowChat(true);
   const { t } = useTranslation();
 
   return (
@@ -61,10 +64,14 @@ const Hero = () => {
           <a className="px-10 py-3 text-center text-white bg-blue-600 rounded shadow hover:bg-blue-500">
             Get Started
           </a>
-          <a className="px-10 py-3 text-center text-blue-600 rounded shadow hover:bg-blue-50">
+          <button
+            onClick={handleDemoClick}
+            className="px-10 py-3 text-center text-blue-600 rounded shadow hover:bg-blue-50"
+          >
             Live Demo
-          </a>
+          </button>
         </div>
+        {showChat && <XiaoiceChat />}
       </div>
     </div>
   );
