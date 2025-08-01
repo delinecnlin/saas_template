@@ -214,7 +214,7 @@ npm run dev
 - Express Validator - 7.2.1
 - Micro - 10.0.1
 - Next Themes - 0.4.6
-- Nodemailer - 7.0.5
+- Nodemailer - 6.10.1
 - React Copy to Clipboard - 5.1.0
 - React Google Analytics - 3.3.1
 - React Hot Toast - 2.5.2
