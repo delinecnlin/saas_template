@@ -33,6 +33,15 @@ export default async function handler(req, res) {
   });
 
   const rt = await OpenAIRealtimeWS.azure(azureClient);
+  rt.send({
+    type: 'session.update',
+    session: {
+      turn_detection: {
+        type: 'server_vad',
+        create_response: true,
+      },
+    },
+  });
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -74,7 +83,5 @@ export default async function handler(req, res) {
   const audioBuffer = Buffer.concat(chunks);
   const base64Audio = audioBuffer.toString('base64');
 
-  rt.send({ type: 'response.create' });
   rt.send({ type: 'input_audio_buffer.append', audio: base64Audio });
-  rt.send({ type: 'input_audio_buffer.commit' });
 }
