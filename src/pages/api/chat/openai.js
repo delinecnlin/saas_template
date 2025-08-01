@@ -26,6 +26,8 @@ export default async function handler(req, res) {
   const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
   const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
   const apiKey = process.env.AZURE_OPENAI_API_KEY;
+  const apiVersion = process.env.AZURE_OPENAI_API_VERSION ||
+    '2024-02-15-preview';
 
   if (!endpoint || !deployment || !apiKey) {
     res.status(500).json({ error: 'Azure OpenAI environment not configured' });
@@ -33,7 +35,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=2024-02-15-preview`;
+    const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
     const response = await axios.post(
       url,
       {
