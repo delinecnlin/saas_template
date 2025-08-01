@@ -1,33 +1,11 @@
+import { AzureOpenAI } from 'openai';
+import { OpenAIRealtimeWS } from 'openai/beta/realtime/ws';
 import validateSession from '@/config/api-validation/session';
 
 export const config = {
   api: {
     bodyParser: false,
   },
-};
-
-const transcribeAudio = async (audioBuffer) => {
-  const key = process.env.AZURE_SPEECH_KEY;
-  const region = process.env.AZURE_SPEECH_REGION;
-  if (!key || !region) return '';
-  try {
-    const resp = await fetch(
-      `https://${region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'audio/webm',
-          'Ocp-Apim-Subscription-Key': key,
-        },
-        body: audioBuffer,
-      }
-    );
-    const data = await resp.json();
-    return data.DisplayText || '';
-  } catch (e) {
-    console.error('[Azure Speech] transcribe error:', e);
-    return '';
-  }
 };
 
 export default async function handler(req, res) {
@@ -40,38 +18,21 @@ export default async function handler(req, res) {
   }
 
   const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+  const deployment = process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT;
   const apiKey = process.env.AZURE_OPENAI_API_KEY;
-  const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
-  const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview';
+  const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2025-04-01-preview';
 
-  if (!endpoint || !apiKey || !deployment) {
-    res.status(500).json({ error: 'Azure OpenAI not configured' });
+  if (!endpoint || !deployment || !apiKey) {
+    res.status(500).json({ error: 'Azure OpenAI realtime not configured' });
     return;
   }
 
-  const chunks = [];
-  for await (const chunk of req) {
-    chunks.push(chunk);
-  }
-  const audioBuffer = Buffer.concat(chunks);
+  const azureClient = new AzureOpenAI({
+    apiKey,
+    azure: { endpoint, deploymentName: deployment, apiVersion },
+  });
 
-  const userContent = await transcribeAudio(audioBuffer);
-
-  const controller = new AbortController();
-  req.on('close', () => controller.abort());
-
-  const azureRes = await fetch(
-    `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': apiKey,
-      },
-      body: JSON.stringify({ messages: [{ role: 'user', content: userContent }], stream: true }),
-      signal: controller.signal,
-    }
-  );
+  const rt = await OpenAIRealtimeWS.azure(azureClient);
 
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
@@ -79,17 +40,33 @@ export default async function handler(req, res) {
     Connection: 'keep-alive',
   });
 
-  const decoder = new TextDecoder();
-  for await (const chunk of azureRes.body) {
-    const lines = decoder.decode(chunk).split('\n');
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      if (trimmed.startsWith('data:')) {
-        const data = trimmed.replace(/^data:\s*/, '');
-        res.write(`data: ${data}\n\n`);
-      }
-    }
+  rt.on('response.text.delta', (event) => {
+    res.write(`data: ${JSON.stringify({ text: event.delta })}\n\n`);
+  });
+
+  const close = () => {
+    if (rt) rt.close();
+    res.end();
+  };
+
+  rt.on('response.done', () => {
+    res.write('event: done\ndata: {}\n\n');
+    close();
+  });
+
+  rt.on('error', (err) => {
+    res.write(`event: error\ndata: ${JSON.stringify({ message: err.message })}\n\n`);
+    close();
+  });
+
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(chunk);
   }
-  res.end();
+  const audioBuffer = Buffer.concat(chunks);
+  const base64Audio = audioBuffer.toString('base64');
+
+  rt.send({ type: 'response.create' });
+  rt.send({ type: 'input_audio_buffer.append', audio: base64Audio });
+  rt.send({ type: 'input_audio_buffer.commit' });
 }
