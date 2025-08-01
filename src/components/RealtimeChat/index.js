@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 const RealtimeChat = () => {
   const [recording, setRecording] = useState(false);
@@ -7,6 +7,11 @@ const RealtimeChat = () => {
   const [input, setInput] = useState('');
   const mediaRecorderRef = useRef(null);
   const abortRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, response]);
 
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -40,24 +45,13 @@ const RealtimeChat = () => {
             const data = line.replace('data:', '').trim();
             if (!data) return;
             if (eventName === 'transcript') {
-              try {
-                const json = JSON.parse(data);
-                transcript += json.delta || '';
-              } catch {}
+              try { const json = JSON.parse(data); transcript += json.delta || ''; } catch {}
             } else if (eventName === 'transcript_done') {
-              try {
-                const json = JSON.parse(data);
-                transcript += json.transcript || '';
-              } catch {}
+              try { const json = JSON.parse(data); transcript += json.transcript || ''; } catch {}
               setMessages(prev => [...prev, { role: 'user', content: transcript }]);
               transcript = '';
             } else {
-              try {
-                const json = JSON.parse(data);
-                txt += json.text || json.choices?.[0]?.delta?.content || '';
-              } catch {
-                txt += data;
-              }
+              try { const json = JSON.parse(data); txt += json.text || json.choices?.[0]?.delta?.content || ''; } catch { txt += data; }
               setResponse(txt);
             }
             eventName = '';
@@ -69,6 +63,7 @@ const RealtimeChat = () => {
         const utter = new SpeechSynthesisUtterance(txt);
         speechSynthesis.speak(utter);
       }
+      setResponse('');
     };
     recorder.start();
     mediaRecorderRef.current = recorder;
@@ -111,7 +106,7 @@ const RealtimeChat = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col h-full space-y-4">
       <div className="space-x-2">
         <button onClick={recording ? stopRecording : startRecording} className="px-4 py-2 bg-blue-500 text-white rounded">
           {recording ? 'Stop' : 'Record'}
@@ -120,22 +115,24 @@ const RealtimeChat = () => {
           Interrupt
         </button>
       </div>
-      <div className="h-64 overflow-y-auto p-2 bg-gray-100 rounded">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 rounded">
         {messages.map((m, i) => (
-          <div key={i} className="mb-2">
-            <strong>{m.role === 'assistant' ? 'AI:' : 'Me:'}</strong> {m.content}
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`px-3 py-2 rounded-lg max-w-lg whitespace-pre-line ${m.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white text-gray-900 border'}`}>{m.content}</div>
           </div>
         ))}
         {response && (
-          <div className="mb-2 text-blue-600">
-            <strong>AI:</strong> {response}
+          <div className="flex justify-start">
+            <div className="px-3 py-2 rounded-lg max-w-lg whitespace-pre-line bg-white text-gray-900 border">{response}</div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
-      <div className="flex space-x-2">
+      <div className="flex items-center space-x-2">
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), sendText())}
           className="flex-1 border rounded p-2"
           placeholder="Type your message..."
         />
