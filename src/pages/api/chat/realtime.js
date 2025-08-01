@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
+  const endpoint = process.env.AZURE_OPENAI_REALTIME_ENDPOINT;
   const deployment = process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT;
   const apiKey = process.env.AZURE_OPENAI_API_KEY;
   const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2025-04-01-preview';
