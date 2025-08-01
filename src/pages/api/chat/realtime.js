@@ -44,6 +44,14 @@ export default async function handler(req, res) {
     res.write(`data: ${JSON.stringify({ text: event.delta })}\n\n`);
   });
 
+  rt.on('conversation.item.input_audio_transcription.delta', (event) => {
+    res.write(`event: transcript\ndata: ${JSON.stringify({ delta: event.delta })}\n\n`);
+  });
+
+  rt.on('conversation.item.input_audio_transcription.completed', (event) => {
+    res.write(`event: transcript_done\ndata: ${JSON.stringify({ transcript: event.transcript })}\n\n`);
+  });
+
   const close = () => {
     if (rt) rt.close();
     res.end();
