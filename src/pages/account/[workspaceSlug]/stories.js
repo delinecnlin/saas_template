@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import AccountLayout from '@/layouts/AccountLayout';
 import XiaoiceChat from '@/components/XiaoiceChat';
+import RealtimeChat from '@/components/RealtimeChat';
 
 function StoriesPage() {
   const router = useRouter();
@@ -53,7 +54,9 @@ function StoriesPage() {
         </div>
       )}
       {activeChat === 'voice' && (
-        <div className="mb-4 p-4 border rounded">Realtime Voice Chat Panel</div>
+        <div className="mb-4 p-4 border rounded">
+          <RealtimeChat />
+        </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {stories.length > 0 ? stories.map(s => (
