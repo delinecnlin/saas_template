@@ -1,17 +1,23 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import AccountLayout from '@/layouts/AccountLayout';
+import XiaoiceChat from '@/components/XiaoiceChat';
 
 function StoriesPage() {
   const router = useRouter();
   const { workspaceSlug } = router.query;
 
   const [activeChat, setActiveChat] = useState(null);
+  const [showDigitalChat, setShowDigitalChat] = useState(false);
 
   // TODO: integrate with real stories data
   const stories = [];
 
   const toggleChat = (type) => {
+    if (type === 'digital') {
+      setShowDigitalChat(true);
+      return;
+    }
     setActiveChat((prev) => (prev === type ? null : type));
   };
 
@@ -26,12 +32,16 @@ function StoriesPage() {
           >
             Normal Chat
           </button>
-          <button
-            className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
-            onClick={() => toggleChat('digital')}
-          >
-            Digital Human Chat
-          </button>
+          {!showDigitalChat ? (
+            <button
+              className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+              onClick={() => toggleChat('digital')}
+            >
+              Digital Human Chat
+            </button>
+          ) : (
+            <XiaoiceChat />
+          )}
           <button
             className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
             onClick={() => toggleChat('voice')}
@@ -45,9 +55,6 @@ function StoriesPage() {
       </div>
       {activeChat === 'normal' && (
         <div className="mb-4 p-4 border rounded">Normal Chat Panel</div>
-      )}
-      {activeChat === 'digital' && (
-        <div className="mb-4 p-4 border rounded">Digital Human Chat Panel</div>
       )}
       {activeChat === 'voice' && (
         <div className="mb-4 p-4 border rounded">Realtime Voice Chat Panel</div>
