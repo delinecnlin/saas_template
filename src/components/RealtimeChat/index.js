@@ -17,9 +17,29 @@ const RealtimeChat = () => {
   }, [messages, response]);
 
   const startRecording = async () => {
-    const res = await fetch('/api/chat/realtime', { method: 'POST' });
-    if (!res.ok) return;
+    console.log('[RealtimeChat] requesting session');
+    let res;
+    try {
+      res = await fetch('/api/chat/realtime', { method: 'POST' });
+    } catch (err) {
+      console.error('[RealtimeChat] failed to reach realtime API', err);
+      alert('Realtime API unreachable');
+      return;
+    }
+
+    console.log('[RealtimeChat] session response status', res.status);
+    if (!res.ok) {
+      let message = 'Failed to start realtime session';
+      try {
+        const data = await res.json();
+        if (data?.error) message = data.error;
+      } catch (_) {}
+      alert(message);
+      return;
+    }
     const { ephemeralKey, webrtcUrl, model } = await res.json();
+    console.log('[RealtimeChat] got session', { webrtcUrl, model });
+
 
     const pc = new RTCPeerConnection();
     pcRef.current = pc;
@@ -30,7 +50,15 @@ const RealtimeChat = () => {
       remoteAudio.srcObject = event.streams[0];
     };
 
-    const localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    let localStream;
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      console.error('[RealtimeChat] microphone access denied', err);
+      alert('Microphone access denied');
+      return;
+    }
+
     localStreamRef.current = localStream;
     localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
 
@@ -38,6 +66,8 @@ const RealtimeChat = () => {
     dcRef.current = dc;
 
     dc.addEventListener('open', () => {
+      console.log('[RealtimeChat] data channel open');
+
       dc.send(
         JSON.stringify({
           type: 'session.update',
@@ -75,18 +105,34 @@ const RealtimeChat = () => {
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
+    console.log('[RealtimeChat] sending SDP offer');
 
-    const sdpResponse = await fetch(`${webrtcUrl}?model=${model}`, {
-      method: 'POST',
-      body: offer.sdp,
-      headers: {
-        Authorization: `Bearer ${ephemeralKey}`,
-        'Content-Type': 'application/sdp',
-      },
-    });
+    let sdpResponse;
+    try {
+      sdpResponse = await fetch(`${webrtcUrl}?model=${model}`, {
+        method: 'POST',
+        body: offer.sdp,
+        headers: {
+          Authorization: `Bearer ${ephemeralKey}`,
+          'Content-Type': 'application/sdp',
+        },
+      });
+    } catch (err) {
+      console.error('[RealtimeChat] failed to send SDP offer', err);
+      alert('Failed to connect to realtime service');
+      return;
+    }
+
+    console.log('[RealtimeChat] SDP response status', sdpResponse.status);
+    if (!sdpResponse.ok) {
+      alert('Realtime service rejected SDP offer');
+      return;
+    }
 
     const answer = { type: 'answer', sdp: await sdpResponse.text() };
     await pc.setRemoteDescription(answer);
+    console.log('[RealtimeChat] connection established');
+
 
     setRecording(true);
   };

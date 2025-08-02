@@ -60,6 +60,8 @@ cp .env.sample .env
 - `AZURE_REALTIME_KEY`：Azure 实时服务的密钥。
 - `XIAOBING_API_KEY`：用于访问小冰数字人 API 的 Key。
 
+调试实时聊天时，可在浏览器控制台查看以 `[RealtimeChat]` 开头的日志，并在服务器输出中查找 `[API] /api/chat/realtime` 的记录，以确认失败步骤。
+
 请根据实际需求填写对应值。
 
 ### 4. 数据库迁移和填充
