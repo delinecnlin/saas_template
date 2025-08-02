@@ -5,123 +5,146 @@ const RealtimeChat = () => {
   const [response, setResponse] = useState('');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const mediaRecorderRef = useRef(null);
-  const abortRef = useRef(null);
-  const vadTimerRef = useRef(null);
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const silenceStartRef = useRef(null);
+  const pcRef = useRef(null);
+  const dcRef = useRef(null);
+  const localStreamRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const responseRef = useRef('');
+  const transcriptRef = useRef('');
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, response]);
 
   const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioContext.createMediaStreamSource(stream);
-    const analyser = audioContext.createAnalyser();
-    analyser.fftSize = 2048;
-    source.connect(analyser);
+    console.log('[RealtimeChat] requesting session');
+    let res;
+    try {
+      res = await fetch('/api/chat/realtime', { method: 'POST' });
+    } catch (err) {
+      console.error('[RealtimeChat] failed to reach realtime API', err);
+      alert('Realtime API unreachable');
+      return;
+    }
 
-    const recorder = new MediaRecorder(stream);
-    const chunks = [];
-    recorder.ondataavailable = e => chunks.push(e.data);
-    recorder.onstop = async () => {
-      clearInterval(vadTimerRef.current);
-      audioContextRef.current && audioContextRef.current.close();
-      const blob = new Blob(chunks, { type: 'audio/webm' });
-      const controller = new AbortController();
-      abortRef.current = controller;
-      const res = await fetch('/api/chat/realtime', {
-        method: 'POST',
-        headers: { 'Content-Type': 'audio/webm' },
-        body: blob,
-        signal: controller.signal,
-      });
-      if (!res.body) return;
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let txt = '';
-      let eventName = '';
-      let transcript = '';
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        const str = decoder.decode(value);
-        str.split('\n').forEach(line => {
-          if (line.startsWith('event:')) {
-            eventName = line.replace('event:', '').trim();
-          } else if (line.startsWith('data:')) {
-            const data = line.replace('data:', '').trim();
-            if (!data) return;
-            if (eventName === 'transcript') {
-              try { const json = JSON.parse(data); transcript += json.delta || ''; } catch {}
-            } else if (eventName === 'transcript_done') {
-              try { const json = JSON.parse(data); transcript += json.transcript || ''; } catch {}
-              setMessages(prev => [...prev, { role: 'user', content: transcript }]);
-              transcript = '';
-            } else {
-              try { const json = JSON.parse(data); txt += json.text || json.choices?.[0]?.delta?.content || ''; } catch { txt += data; }
-              setResponse(txt);
-            }
-            eventName = '';
-          }
-        });
-      }
-      if (txt) {
-        setMessages(prev => [...prev, { role: 'assistant', content: txt }]);
-        const utter = new SpeechSynthesisUtterance(txt);
-        speechSynthesis.speak(utter);
-      }
-      setResponse('');
-      if (recording) startRecording();
+    console.log('[RealtimeChat] session response status', res.status);
+    if (!res.ok) {
+      let message = 'Failed to start realtime session';
+      try {
+        const data = await res.json();
+        if (data?.error) message = data.error;
+      } catch (_) {}
+      alert(message);
+      return;
+    }
+    const { ephemeralKey, webrtcUrl, model } = await res.json();
+    console.log('[RealtimeChat] got session', { webrtcUrl, model });
+
+    const pc = new RTCPeerConnection();
+    pcRef.current = pc;
+
+    const remoteAudio = new Audio();
+    remoteAudio.autoplay = true;
+    pc.ontrack = (event) => {
+      remoteAudio.srcObject = event.streams[0];
     };
-    recorder.start();
-    mediaRecorderRef.current = recorder;
-    audioContextRef.current = audioContext;
-    analyserRef.current = analyser;
 
-    vadTimerRef.current = setInterval(() => {
-      const data = new Uint8Array(analyser.fftSize);
-      analyser.getByteTimeDomainData(data);
-      let sum = 0;
-      for (let i = 0; i < data.length; i++) {
-        const v = (data[i] - 128) / 128;
-        sum += v * v;
-      }
-      const rms = Math.sqrt(sum / data.length);
-      if (rms < 0.02) {
-        if (!silenceStartRef.current) silenceStartRef.current = Date.now();
-        if (Date.now() - silenceStartRef.current > 1000) {
-          silenceStartRef.current = null;
-          recorder.stop();
+    let localStream;
+    try {
+      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch (err) {
+      console.error('[RealtimeChat] microphone access denied', err);
+      alert('Microphone access denied');
+      return;
+    }
+    localStreamRef.current = localStream;
+    localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
+
+    const dc = pc.createDataChannel('oai-events');
+    dcRef.current = dc;
+
+    dc.addEventListener('open', () => {
+      console.log('[RealtimeChat] data channel open');
+      dc.send(
+        JSON.stringify({
+          type: 'session.update',
+          session: {
+            turn_detection: { type: 'server_vad', create_response: true },
+          },
+        })
+      );
+    });
+
+    dc.addEventListener('message', (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'conversation.item.input_audio_transcription.delta') {
+          transcriptRef.current += msg.delta;
+        } else if (msg.type === 'conversation.item.input_audio_transcription.completed') {
+          setMessages((prev) => [...prev, { role: 'user', content: transcriptRef.current }]);
+          transcriptRef.current = '';
+        } else if (msg.type === 'response.text.delta') {
+          responseRef.current += msg.delta;
+          setResponse(responseRef.current);
+        } else if (msg.type === 'response.done') {
+          if (responseRef.current) {
+            setMessages((prev) => [...prev, { role: 'assistant', content: responseRef.current }]);
+            const utter = new SpeechSynthesisUtterance(responseRef.current);
+            speechSynthesis.speak(utter);
+          }
+          responseRef.current = '';
+          setResponse('');
         }
-      } else {
-        silenceStartRef.current = null;
+      } catch (e) {
+        console.error('Failed to parse message', e);
       }
-    }, 100);
+    });
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    console.log('[RealtimeChat] sending SDP offer');
+
+    let sdpResponse;
+    try {
+      sdpResponse = await fetch(`${webrtcUrl}?model=${model}`, {
+        method: 'POST',
+        body: offer.sdp,
+        headers: {
+          Authorization: `Bearer ${ephemeralKey}`,
+          'Content-Type': 'application/sdp',
+        },
+      });
+    } catch (err) {
+      console.error('[RealtimeChat] failed to send SDP offer', err);
+      alert('Failed to connect to realtime service');
+      return;
+    }
+
+    console.log('[RealtimeChat] SDP response status', sdpResponse.status);
+    if (!sdpResponse.ok) {
+      alert('Realtime service rejected SDP offer');
+      return;
+    }
+
+    const answer = { type: 'answer', sdp: await sdpResponse.text() };
+    await pc.setRemoteDescription(answer);
+    console.log('[RealtimeChat] connection established');
 
     setRecording(true);
   };
 
   const endConversation = () => {
-    if (abortRef.current) {
-      abortRef.current.abort();
-    }
-    if (mediaRecorderRef.current && recording) {
-      mediaRecorderRef.current.stop();
-    }
-    clearInterval(vadTimerRef.current);
-    audioContextRef.current && audioContextRef.current.close();
+    dcRef.current?.close();
+    pcRef.current?.close();
+    localStreamRef.current?.getTracks().forEach((t) => t.stop());
     setRecording(false);
+    setResponse('');
   };
 
   const sendText = async () => {
     if (!input.trim()) return;
     const userMsg = { role: 'user', content: input.trim() };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setInput('');
     const res = await fetch('/api/chat/openai', {
       method: 'POST',
@@ -130,7 +153,7 @@ const RealtimeChat = () => {
     });
     const data = await res.json();
     if (data.reply) {
-      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
       const utter = new SpeechSynthesisUtterance(data.reply);
       speechSynthesis.speak(utter);
     }
@@ -139,19 +162,30 @@ const RealtimeChat = () => {
   return (
     <div className="flex flex-col h-full space-y-4">
       <div>
-        <button onClick={recording ? endConversation : startRecording} className="px-4 py-2 bg-blue-500 text-white rounded">
+        <button
+          onClick={recording ? endConversation : startRecording}
+          className="px-4 py-2 bg-blue-500 text-white rounded"
+        >
           {recording ? 'End Conversation' : 'Start Conversation'}
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 rounded">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`px-3 py-2 rounded-lg max-w-lg whitespace-pre-line ${m.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white text-gray-900 border'}`}>{m.content}</div>
+            <div
+              className={`px-3 py-2 rounded-lg max-w-lg whitespace-pre-line ${
+                m.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white text-gray-900 border'
+              }`}
+            >
+              {m.content}
+            </div>
           </div>
         ))}
         {response && (
           <div className="flex justify-start">
-            <div className="px-3 py-2 rounded-lg max-w-lg whitespace-pre-line bg-white text-gray-900 border">{response}</div>
+            <div className="px-3 py-2 rounded-lg max-w-lg whitespace-pre-line bg-white text-gray-900 border">
+              {response}
+            </div>
           </div>
         )}
         <div ref={messagesEndRef} />
@@ -173,3 +207,4 @@ const RealtimeChat = () => {
 };
 
 export default RealtimeChat;
+
