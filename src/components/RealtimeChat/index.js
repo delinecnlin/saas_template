@@ -7,6 +7,10 @@ const RealtimeChat = () => {
   const [input, setInput] = useState('');
   const mediaRecorderRef = useRef(null);
   const abortRef = useRef(null);
+  const vadTimerRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const silenceStartRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -15,10 +19,18 @@ const RealtimeChat = () => {
 
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 2048;
+    source.connect(analyser);
+
     const recorder = new MediaRecorder(stream);
     const chunks = [];
     recorder.ondataavailable = e => chunks.push(e.data);
     recorder.onstop = async () => {
+      clearInterval(vadTimerRef.current);
+      audioContextRef.current && audioContextRef.current.close();
       const blob = new Blob(chunks, { type: 'audio/webm' });
       const controller = new AbortController();
       abortRef.current = controller;
@@ -64,26 +76,45 @@ const RealtimeChat = () => {
         speechSynthesis.speak(utter);
       }
       setResponse('');
+      if (recording) startRecording();
     };
     recorder.start();
     mediaRecorderRef.current = recorder;
+    audioContextRef.current = audioContext;
+    analyserRef.current = analyser;
+
+    vadTimerRef.current = setInterval(() => {
+      const data = new Uint8Array(analyser.fftSize);
+      analyser.getByteTimeDomainData(data);
+      let sum = 0;
+      for (let i = 0; i < data.length; i++) {
+        const v = (data[i] - 128) / 128;
+        sum += v * v;
+      }
+      const rms = Math.sqrt(sum / data.length);
+      if (rms < 0.02) {
+        if (!silenceStartRef.current) silenceStartRef.current = Date.now();
+        if (Date.now() - silenceStartRef.current > 1000) {
+          silenceStartRef.current = null;
+          recorder.stop();
+        }
+      } else {
+        silenceStartRef.current = null;
+      }
+    }, 100);
+
     setRecording(true);
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-    }
-    setRecording(false);
-  };
-
-  const interrupt = () => {
+  const endConversation = () => {
     if (abortRef.current) {
       abortRef.current.abort();
     }
     if (mediaRecorderRef.current && recording) {
       mediaRecorderRef.current.stop();
     }
+    clearInterval(vadTimerRef.current);
+    audioContextRef.current && audioContextRef.current.close();
     setRecording(false);
   };
 
@@ -107,12 +138,9 @@ const RealtimeChat = () => {
 
   return (
     <div className="flex flex-col h-full space-y-4">
-      <div className="space-x-2">
-        <button onClick={recording ? stopRecording : startRecording} className="px-4 py-2 bg-blue-500 text-white rounded">
-          {recording ? 'Stop' : 'Record'}
-        </button>
-        <button onClick={interrupt} disabled={!abortRef.current} className="px-4 py-2 bg-red-500 text-white rounded disabled:opacity-50">
-          Interrupt
+      <div>
+        <button onClick={recording ? endConversation : startRecording} className="px-4 py-2 bg-blue-500 text-white rounded">
+          {recording ? 'End Conversation' : 'Start Conversation'}
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 rounded">
