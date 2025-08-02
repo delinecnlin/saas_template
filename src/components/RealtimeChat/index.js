@@ -40,6 +40,7 @@ const RealtimeChat = () => {
     const { ephemeralKey, webrtcUrl, model } = await res.json();
     console.log('[RealtimeChat] got session', { webrtcUrl, model });
 
+
     const pc = new RTCPeerConnection();
     pcRef.current = pc;
 
@@ -57,6 +58,7 @@ const RealtimeChat = () => {
       alert('Microphone access denied');
       return;
     }
+
     localStreamRef.current = localStream;
     localStream.getTracks().forEach((track) => pc.addTrack(track, localStream));
 
@@ -65,6 +67,7 @@ const RealtimeChat = () => {
 
     dc.addEventListener('open', () => {
       console.log('[RealtimeChat] data channel open');
+
       dc.send(
         JSON.stringify({
           type: 'session.update',
@@ -129,6 +132,7 @@ const RealtimeChat = () => {
     const answer = { type: 'answer', sdp: await sdpResponse.text() };
     await pc.setRemoteDescription(answer);
     console.log('[RealtimeChat] connection established');
+
 
     setRecording(true);
   };
