@@ -28,6 +28,14 @@ const RealtimeChat = () => {
     }
 
     console.log('[RealtimeChat] session response status', res.status);
+    if (res.status === 404) {
+      alert('Realtime endpoint missing on server');
+      return;
+    }
+    if (res.status === 401) {
+      alert('Please log in to start a realtime session');
+      return;
+    }
     if (!res.ok) {
       let message = 'Failed to start realtime session';
       try {
@@ -84,14 +92,22 @@ const RealtimeChat = () => {
         if (msg.type === 'conversation.item.input_audio_transcription.delta') {
           transcriptRef.current += msg.delta;
         } else if (msg.type === 'conversation.item.input_audio_transcription.completed') {
-          setMessages((prev) => [...prev, { role: 'user', content: transcriptRef.current }]);
+          setMessages((prev) => {
+            const updated = [...prev, { role: 'user', content: transcriptRef.current }];
+            saveConversation(updated);
+            return updated;
+          });
           transcriptRef.current = '';
         } else if (msg.type === 'response.text.delta') {
           responseRef.current += msg.delta;
           setResponse(responseRef.current);
         } else if (msg.type === 'response.done') {
           if (responseRef.current) {
-            setMessages((prev) => [...prev, { role: 'assistant', content: responseRef.current }]);
+            setMessages((prev) => {
+              const updated = [...prev, { role: 'assistant', content: responseRef.current }];
+              saveConversation(updated);
+              return updated;
+            });
             const utter = new SpeechSynthesisUtterance(responseRef.current);
             speechSynthesis.speak(utter);
           }
@@ -148,18 +164,44 @@ const RealtimeChat = () => {
   const sendText = async () => {
     if (!input.trim()) return;
     const userMsg = { role: 'user', content: input.trim() };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => {
+      const updated = [...prev, userMsg];
+      saveConversation(updated);
+      return updated;
+    });
     setInput('');
     const res = await fetch('/api/chat/openai', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: [...messages, userMsg] }),
     });
-    const data = await res.json();
-    if (data.reply) {
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
-      const utter = new SpeechSynthesisUtterance(data.reply);
-      speechSynthesis.speak(utter);
+    if (res.status === 401) {
+      alert('Please log in to send messages');
+      return;
+    }
+    if (res.ok) {
+      const data = await res.json();
+      if (data.reply) {
+        setMessages((prev) => {
+          const updated = [...prev, { role: 'assistant', content: data.reply }];
+          saveConversation(updated);
+          return updated;
+        });
+        const utter = new SpeechSynthesisUtterance(data.reply);
+        speechSynthesis.speak(utter);
+      }
+    }
+  };
+
+  const saveConversation = async (msgs) => {
+    try {
+      await fetch('/api/conversations/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: msgs }),
+      });
+    } catch (e) {
+      console.error('Failed to save conversation', e);
     }
   };
 

@@ -53,16 +53,27 @@ cp .env.sample .env
 
 .env.sample 文件中还包含与 AI 集成相关的变量：
 
-- `AZURE_OPENAI_KEY` 与 `AZURE_OPENAI_ENDPOINT`：Azure OpenAI 服务的 API 密钥和访问路径。
+- `AZURE_OPENAI_API_KEY` 与 `AZURE_OPENAI_ENDPOINT`：Azure OpenAI 服务的 API 密钥和访问路径。
 - `AZURE_OPENAI_API_VERSION`：Azure OpenAI 服务的 API 版本，若未设置将默认使用 `2024-02-15-preview`。
 - `AZURE_OPENAI_REALTIME_ENDPOINT` 与 `AZURE_OPENAI_REALTIME_DEPLOYMENT`：Azure OpenAI Realtime 服务的资源地址和部署名称。
 - `AZURE_OPENAI_REALTIME_REGION`：用于生成 WebRTC URL 的区域，例如 `eastus2` 对应 `https://eastus2.realtimeapi-preview.ai.azure.com/v1/realtimertc`，服务器在 `/api/chat/realtime` 中会根据此值返回完整的 WebRTC 连接地址。
 - `AZURE_REALTIME_KEY`：Azure 实时服务的密钥。
 - `XIAOBING_API_KEY`：用于访问小冰数字人 API 的 Key。
+- `AZURE_AD_CLIENT_ID`、`AZURE_AD_CLIENT_SECRET`、`AZURE_AD_TENANT_ID`：启用 Azure AD 登录所需的凭据。
 
 调试实时聊天时，可在浏览器控制台查看以 `[RealtimeChat]` 开头的日志，并在服务器输出中查找 `[API] /api/chat/realtime` 的记录，以确认失败步骤。
 
 请根据实际需求填写对应值。
+
+### 7. 故事页面 AI 工具
+
+在 `account/[workspace]/stories` 页面中集成了多种 Azure AI 服务：
+
+- **Realtime Chat**（`/api/chat/realtime`）用于语音对话；
+- **图像生成** (`/api/image/generate`)、**Bing 新闻搜索** (`/api/bing/news`)、**语音服务** (`/api/speech/token`)；
+- **Sora 视频生成** (`/api/sora/generate` 与 `/api/sora/status/[jobId]`)；
+
+这些功能均以按钮形式呈现，可在本地环境中直接体验。
 
 ### 4. 数据库迁移和填充
 
