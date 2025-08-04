@@ -2,8 +2,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/server/auth';
 import OpenAI from 'openai';
 
-const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
@@ -15,18 +13,18 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { messages } = req.body || {};
-
+  const { prompt, size = '1024x1024' } = req.body || {};
   try {
-    const completion = await client.chat.completions.create({
-      model: process.env.OPENAI_TEXT_MODEL || 'gpt-4o-mini',
-      messages: messages || [],
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const img = await client.images.generate({
+      model: process.env.OPENAI_IMAGE_MODEL || 'gpt-image-1',
+      prompt,
+      size,
     });
-
-    const reply = completion.choices?.[0]?.message?.content || '';
-    return res.status(200).json({ reply });
+    const b64 = img.data?.[0]?.b64_json;
+    return res.status(200).json({ b64 });
   } catch (err) {
-    console.error('OpenAI chat error', err);
-    return res.status(500).json({ error: 'Failed to generate reply' });
+    console.error('Image generation error', err);
+    return res.status(500).json({ error: 'Failed to generate image' });
   }
 }
