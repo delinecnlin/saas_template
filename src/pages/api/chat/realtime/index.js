@@ -12,6 +12,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
+
   const model = process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT;
   const endpoint = process.env.AZURE_OPENAI_REALTIME_ENDPOINT;
   const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview';
@@ -30,6 +31,7 @@ export default async function handler(req, res) {
       },
     );
 
+
     if (!resp.ok) {
       const text = await resp.text();
       console.error('Failed to create realtime session', text);
@@ -37,8 +39,10 @@ export default async function handler(req, res) {
     }
 
     const data = await resp.json();
+
     const ephemeralKey = data.key || data?.client_secret?.value;
     const webrtcUrl = `https://${region}.realtimeapi-preview.ai.azure.com/v1/realtimertc`;
+
 
     return res.status(200).json({ ephemeralKey, webrtcUrl, model });
   } catch (err) {
