@@ -2,6 +2,7 @@ import { validateSession } from '@/config/api-validation';
 
 export default async function handler(req, res) {
   try {
+    console.log('[API] /api/chat/realtime');
     const session = await validateSession(req, res);
     if (!session) return;
 
@@ -12,8 +13,12 @@ export default async function handler(req, res) {
 
     const endpoint = process.env.AZURE_OPENAI_REALTIME_ENDPOINT;
     const deployment = process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT;
-    const apiKey = process.env.AZURE_OPENAI_API_KEY;
-    const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2025-04-01-preview';
+    const apiKey =
+      process.env.AZURE_OPENAI_REALTIME_KEY ||
+      process.env.AZURE_OPENAI_API_KEY ||
+      process.env.AZURE_REALTIME_KEY;
+    const apiVersion =
+      process.env.AZURE_OPENAI_API_VERSION || '2025-04-01-preview';
     const region = process.env.AZURE_OPENAI_REALTIME_REGION;
 
     if (!endpoint || !deployment || !apiKey || !region) {
@@ -41,10 +46,13 @@ export default async function handler(req, res) {
 
     const data = await response.json();
 
+    const webrtcUrl = `https://${region}.realtimeapi-preview.ai.azure.com/v1/realtimertc`;
+    console.log('[API] returning WebRTC URL:', webrtcUrl);
+
     res.status(200).json({
       ephemeralKey: data?.client_secret?.value,
       sessionId: data?.id,
-      webrtcUrl: `https://${region}.realtimeapi-preview.ai.azure.com/v1/realtimertc`,
+      webrtcUrl,
       model: deployment,
     });
   } catch (err) {

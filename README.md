@@ -56,7 +56,7 @@ cp .env.sample .env
 - `AZURE_OPENAI_KEY` 与 `AZURE_OPENAI_ENDPOINT`：Azure OpenAI 服务的 API 密钥和访问路径。
 - `AZURE_OPENAI_API_VERSION`：Azure OpenAI 服务的 API 版本，若未设置将默认使用 `2024-02-15-preview`。
 - `AZURE_OPENAI_REALTIME_ENDPOINT` 与 `AZURE_OPENAI_REALTIME_DEPLOYMENT`：Azure OpenAI Realtime 服务的资源地址和部署名称。
-- `AZURE_OPENAI_REALTIME_REGION`：用于生成 WebRTC URL 的区域，例如 `eastus2` 对应 `https://eastus2.realtimeapi-preview.ai.azure.com/v1/realtimertc`。
+- `AZURE_OPENAI_REALTIME_REGION`：用于生成 WebRTC URL 的区域，例如 `eastus2` 对应 `https://eastus2.realtimeapi-preview.ai.azure.com/v1/realtimertc`，服务器在 `/api/chat/realtime` 中会根据此值返回完整的 WebRTC 连接地址。
 - `AZURE_REALTIME_KEY`：Azure 实时服务的密钥。
 - `XIAOBING_API_KEY`：用于访问小冰数字人 API 的 Key。
 
