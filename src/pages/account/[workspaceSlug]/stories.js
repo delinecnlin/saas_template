@@ -4,6 +4,10 @@ import AccountLayout from '@/layouts/AccountLayout';
 import XiaoiceChat from '@/components/XiaoiceChat';
 import RealtimeChat from '@/components/RealtimeChat';
 import TextChat from '@/components/TextChat';
+import SoraVideo from '@/components/SoraVideo';
+import ImageGenerator from '@/components/ImageGenerator';
+import BingNews from '@/components/BingNews';
+import SpeechTools from '@/components/SpeechTools';
 
 function StoriesPage() {
   const router = useRouter();
@@ -41,6 +45,30 @@ function StoriesPage() {
           >
             Realtime Voice Chat
           </button>
+          <button
+            className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+            onClick={() => toggleChat('video')}
+          >
+            Sora Video
+          </button>
+          <button
+            className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+            onClick={() => toggleChat('image')}
+          >
+            Generate Image
+          </button>
+          <button
+            className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+            onClick={() => toggleChat('news')}
+          >
+            Bing News
+          </button>
+          <button
+            className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
+            onClick={() => toggleChat('speech')}
+          >
+            Speech Tools
+          </button>
           <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
             新建故事
           </button>
@@ -57,6 +85,26 @@ function StoriesPage() {
       {activeChat === 'voice' && (
         <div className="mb-4 p-4 border rounded">
           <RealtimeChat />
+        </div>
+      )}
+      {activeChat === 'video' && (
+        <div className="mb-4 p-4 border rounded">
+          <SoraVideo />
+        </div>
+      )}
+      {activeChat === 'image' && (
+        <div className="mb-4 p-4 border rounded">
+          <ImageGenerator />
+        </div>
+      )}
+      {activeChat === 'news' && (
+        <div className="mb-4 p-4 border rounded">
+          <BingNews />
+        </div>
+      )}
+      {activeChat === 'speech' && (
+        <div className="mb-4 p-4 border rounded">
+          <SpeechTools />
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
