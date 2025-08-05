@@ -79,6 +79,24 @@ cp .env.sample .env
 
 这些功能均以按钮形式呈现，可在本地环境中直接体验。
 
+## 代码库结构与功能概览
+
+本项目基于 Next.js 架构，前后端代码集中在 `src` 目录下，主要模块如下：
+
+- `src/components`：前端 UI 组件，包含 Azure 接入的 **AzureTextChat**、**AzureRealtimeChat**、**BingNews**、**ImageGenerator**、**SoraVideo** 和 **SpeechTools** 等。
+- `src/pages/api`：后端 API 路由，封装了 `/api/gpt`、`/api/realtime-config`、`/api/gpt-image/generate`、`/api/bing-search`、`/api/sora/*`、`/api/speech/token` 等服务。
+- `src/lib/server/azureConfig.js`：统一管理 Azure OpenAI、Realtime 及图像生成的配置，供各个 API 复用。
+
+### Realtime Chat 代码逻辑
+
+1. **前端**：`AzureRealtimeChat` 组件首先向 `/api/realtime-config` 请求临时密钥和 WebRTC 地址，然后建立 `RTCPeerConnection`，创建 `oai-events` DataChannel 并发送 `session.update`，启用服务器端语音端点检测。组件会监听来自 DataChannel 的各种事件：
+   - `conversation.item.input_audio_transcription.delta`/`completed` 事件用于实时累积并保存用户语音转写；
+   - `response.text.delta`/`response.done` 事件构建模型回复并通过 `SpeechSynthesis` 播读。
+   当用户输入文本时，组件改为调用 `/api/gpt` 获取文本回答，同时将对话记录保存到 `/api/conversations/save`。
+2. **后端**：`/api/realtime-config` 在验证用户登录后，调用 Azure Realtime REST 接口创建会话，获取 `client_secret` 作为短期 `ephemeralKey`，并根据地区返回完整的 WebRTC 连接 URL。
+
+了解以上流程后，可以在前端继续扩展更多交互（如自定义事件处理、UI 状态管理），或在后端添加鉴权、日志等逻辑以满足业务需求。
+
 ### 4. 数据库迁移和填充
 
 运行以下命令来应用数据库迁移，并使用种子数据填充数据库：
