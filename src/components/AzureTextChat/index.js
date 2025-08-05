@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-const TextChat = () => {
+const AzureTextChat = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isSubmitting, setSubmitting] = useState(false);
@@ -18,7 +18,7 @@ const TextChat = () => {
     setInput('');
     setSubmitting(true);
     try {
-      const res = await fetch('/api/chat/openai', {
+      const res = await fetch('/api/gpt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: history })
@@ -63,4 +63,5 @@ const TextChat = () => {
   );
 };
 
-export default TextChat;
+export default AzureTextChat;
+

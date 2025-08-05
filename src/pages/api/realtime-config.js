@@ -2,8 +2,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/server/auth';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST']);
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', ['GET']);
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -12,16 +12,23 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const model = process.env.OPENAI_REALTIME_MODEL || 'gpt-4o-realtime-preview';
+  console.log('[API] /api/realtime-config');
+
+  const endpoint = process.env.AZURE_OPENAI_REALTIME_ENDPOINT;
+  const deployment = process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT;
+  const apiKey = process.env.AZURE_REALTIME_KEY;
+  const region = process.env.AZURE_OPENAI_REALTIME_REGION;
+  const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview';
 
   try {
-    const resp = await fetch('https://api.openai.com/v1/realtime/sessions', {
+    const url = `${endpoint}?api-version=${apiVersion}`;
+    const resp = await fetch(url, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         'Content-Type': 'application/json',
+        'api-key': apiKey,
       },
-      body: JSON.stringify({ model }),
+      body: JSON.stringify({ model: deployment }),
     });
 
     if (!resp.ok) {
@@ -32,9 +39,9 @@ export default async function handler(req, res) {
 
     const data = await resp.json();
     const ephemeralKey = data?.client_secret?.value;
-    const webrtcUrl = 'https://api.openai.com/v1/realtime';
+    const webrtcUrl = `https://${region}.realtimeapi-preview.ai.azure.com/v1/realtimertc`;
 
-    return res.status(200).json({ ephemeralKey, webrtcUrl, model });
+    return res.status(200).json({ endpoint: webrtcUrl, apiKey: ephemeralKey, deployment });
   } catch (err) {
     console.error('Realtime session error', err);
     return res.status(500).json({ error: 'Failed to create realtime session' });

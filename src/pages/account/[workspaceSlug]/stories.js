@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/router';
 import AccountLayout from '@/layouts/AccountLayout';
 import XiaoiceChat from '@/components/XiaoiceChat';
-import RealtimeChat from '@/components/RealtimeChat';
-import TextChat from '@/components/TextChat';
+import AzureRealtimeChat from '@/components/AzureRealtimeChat';
+import AzureTextChat from '@/components/AzureTextChat';
 import SoraVideo from '@/components/SoraVideo';
 import ImageGenerator from '@/components/ImageGenerator';
 import BingNews from '@/components/BingNews';
@@ -29,9 +29,9 @@ function StoriesPage() {
         <div className="flex space-x-2">
           <button
             className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
-            onClick={() => toggleChat('normal')}
+            onClick={() => toggleChat('text')}
           >
-            Normal Chat
+            Text Chat
           </button>
           <button
             className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
@@ -41,9 +41,9 @@ function StoriesPage() {
           </button>
           <button
             className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
-            onClick={() => toggleChat('voice')}
+            onClick={() => toggleChat('realtime')}
           >
-            Realtime Voice Chat
+            Realtime Chat
           </button>
           <button
             className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
@@ -74,17 +74,17 @@ function StoriesPage() {
           </button>
         </div>
       </div>
-      {activeChat === 'normal' && (
-        <div className="mb-4 p-4 border rounded"><TextChat /></div>
+      {activeChat === 'text' && (
+        <div className="mb-4 p-4 border rounded"><AzureTextChat /></div>
       )}
       {activeChat === 'digital' && (
         <div className="mb-4 p-4 border rounded">
           <XiaoiceChat />
         </div>
       )}
-      {activeChat === 'voice' && (
+      {activeChat === 'realtime' && (
         <div className="mb-4 p-4 border rounded">
-          <RealtimeChat />
+          <AzureRealtimeChat />
         </div>
       )}
       {activeChat === 'video' && (
