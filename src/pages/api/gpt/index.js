@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/server/auth';
+import { getGptConfig, gptDefaultParams } from '@/lib/server/azureConfig';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -12,21 +13,34 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { messages = [] } = req.body || {};
-  const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-  const deployment = process.env.AZURE_OPENAI_DEPLOYMENT;
-  const apiKey = process.env.AZURE_OPENAI_API_KEY;
-  const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview';
+  const { messages = [], model = 'gpt-4o', params = {} } = req.body || {};
+  const { apiKey, endpoint, deployment, apiVersion } = getGptConfig(model);
+
+  const {
+    temperature = gptDefaultParams.temperature,
+    top_p = gptDefaultParams.top_p,
+    frequency_penalty = gptDefaultParams.frequency_penalty,
+    presence_penalty = gptDefaultParams.presence_penalty,
+    max_tokens = gptDefaultParams.max_tokens,
+  } = params;
 
   try {
     const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
+    const body = {
+      messages,
+      temperature,
+      top_p,
+      frequency_penalty,
+      presence_penalty,
+      max_tokens,
+    };
     const resp = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'api-key': apiKey,
       },
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify(body),
     });
 
     if (!resp.ok) {

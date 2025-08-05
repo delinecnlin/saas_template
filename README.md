@@ -53,8 +53,9 @@ cp .env.sample .env
 
 .env.sample 文件中还包含与 AI 集成相关的变量：
 
-- `AZURE_OPENAI_KEY` 与 `AZURE_OPENAI_ENDPOINT`：Azure OpenAI 服务的 API 密钥和访问路径。
+- `AZURE_OPENAI_API_KEY` 与 `AZURE_OPENAI_ENDPOINT`：Azure OpenAI 服务的 API 密钥和访问路径。
 - `AZURE_OPENAI_API_VERSION`：Azure OpenAI 服务的 API 版本，若未设置将默认使用 `2024-02-15-preview`。
+- `AZURE_OPENAI_MINI_API_KEY`、`AZURE_OPENAI_MINI_ENDPOINT`、`AZURE_OPENAI_MINI_DEPLOYMENT`：可选，`gpt-4o-mini` 模型的配置，未设置时回退到通用配置。
 - `AZURE_OPENAI_REALTIME_ENDPOINT` 与 `AZURE_OPENAI_REALTIME_DEPLOYMENT`：Azure OpenAI Realtime 服务的资源地址和部署名称。
 - `AZURE_OPENAI_REALTIME_REGION`：用于生成 WebRTC URL 的区域，例如 `eastus2` 对应 `https://eastus2.realtimeapi-preview.ai.azure.com/v1/realtimertc`，服务器在 `/api/realtime-config` 中会根据此值返回完整的 WebRTC 连接地址。
 - `AZURE_REALTIME_KEY`：Azure 实时服务的密钥。
@@ -65,10 +66,13 @@ cp .env.sample .env
 
 请根据实际需求填写对应值。
 
+调用文本聊天接口时，可以向 `/api/gpt` 发送 `{ messages, model, params }` 格式的请求，其中 `params` 可覆盖温度、最大 Token 等参数；默认值可通过 `GET /api/gpt/params` 获取。
+
 ### 7. 故事页面 AI 工具
 
 在 `account/[workspace]/stories` 页面中集成了多种 Azure AI 服务：
 
+- **Text Chat** (`/api/gpt`，可通过 `/api/gpt/params` 获取默认参数)；
 - **Realtime Chat**（`/api/realtime-config`）用于语音对话；
 - **图像生成** (`/api/gpt-image/generate`)、**Bing 新闻搜索** (`/api/bing-search`)、**语音服务** (`/api/speech/token`)；
 - **Sora 视频生成** (`/api/sora/generate` 与 `/api/sora/status/[jobId]`)；

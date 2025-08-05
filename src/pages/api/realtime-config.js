@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/server/auth';
+import { getRealtimeConfig } from '@/lib/server/azureConfig';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -14,11 +15,7 @@ export default async function handler(req, res) {
 
   console.log('[API] /api/realtime-config');
 
-  const endpoint = process.env.AZURE_OPENAI_REALTIME_ENDPOINT;
-  const deployment = process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT;
-  const apiKey = process.env.AZURE_REALTIME_KEY;
-  const region = process.env.AZURE_OPENAI_REALTIME_REGION;
-  const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview';
+  const { endpoint, deployment, apiKey, region, apiVersion } = getRealtimeConfig();
 
   try {
     const url = `${endpoint}?api-version=${apiVersion}`;

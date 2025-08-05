@@ -1,5 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/server/auth';
+import { getImageConfig } from '@/lib/server/azureConfig';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -13,10 +14,7 @@ export default async function handler(req, res) {
   }
 
   const { prompt, size = '1024x1024' } = req.body || {};
-  const endpoint = process.env.AZURE_OPENAI_ENDPOINT;
-  const deployment = process.env.AZURE_OPENAI_IMAGE_DEPLOYMENT || process.env.AZURE_OPENAI_DEPLOYMENT;
-  const apiKey = process.env.AZURE_OPENAI_API_KEY;
-  const apiVersion = process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview';
+  const { endpoint, deployment, apiKey, apiVersion } = getImageConfig();
 
   try {
     const url = `${endpoint}/openai/deployments/${deployment}/images/generations?api-version=${apiVersion}`;
