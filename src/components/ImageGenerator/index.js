@@ -10,7 +10,7 @@ const ImageGenerator = () => {
     setLoading(true);
     setImage('');
     try {
-      const res = await fetch('/api/image/generate', {
+      const res = await fetch('/api/gpt-image/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),

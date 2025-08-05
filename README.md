@@ -53,27 +53,49 @@ cp .env.sample .env
 
 .env.sample 文件中还包含与 AI 集成相关的变量：
 
-- `AZURE_OPENAI_KEY` 与 `AZURE_OPENAI_ENDPOINT`：Azure OpenAI 服务的 API 密钥和访问路径。
+- `AZURE_OPENAI_API_KEY` 与 `AZURE_OPENAI_ENDPOINT`：Azure OpenAI 服务的 API 密钥和访问路径。
 - `AZURE_OPENAI_API_VERSION`：Azure OpenAI 服务的 API 版本，若未设置将默认使用 `2024-02-15-preview`。
+- `AZURE_OPENAI_MINI_API_KEY`、`AZURE_OPENAI_MINI_ENDPOINT`、`AZURE_OPENAI_MINI_DEPLOYMENT`：可选，`gpt-4o-mini` 模型的配置，未设置时回退到通用配置。
 - `AZURE_OPENAI_REALTIME_ENDPOINT` 与 `AZURE_OPENAI_REALTIME_DEPLOYMENT`：Azure OpenAI Realtime 服务的资源地址和部署名称。
-- `AZURE_OPENAI_REALTIME_REGION`：用于生成 WebRTC URL 的区域，例如 `eastus2` 对应 `https://eastus2.realtimeapi-preview.ai.azure.com/v1/realtimertc`，服务器在 `/api/chat/realtime` 中会根据此值返回完整的 WebRTC 连接地址。
+- `AZURE_OPENAI_REALTIME_REGION`：用于生成 WebRTC URL 的区域，例如 `eastus2` 对应 `https://eastus2.realtimeapi-preview.ai.azure.com/v1/realtimertc`，服务器在 `/api/realtime-config` 中会根据此值返回完整的 WebRTC 连接地址。
 - `AZURE_REALTIME_KEY`：Azure 实时服务的密钥。
 - `XIAOBING_API_KEY`：用于访问小冰数字人 API 的 Key。
 - `AZURE_AD_CLIENT_ID`、`AZURE_AD_CLIENT_SECRET`、`AZURE_AD_TENANT_ID`：启用 Azure AD 登录所需的凭据。
 
-调试实时聊天时，可在浏览器控制台查看以 `[RealtimeChat]` 开头的日志，并在服务器输出中查找 `[API] /api/chat/realtime` 的记录，以确认失败步骤。
+调试实时聊天时，可在浏览器控制台查看以 `[AzureRealtimeChat]` 开头的日志，并在服务器输出中查找 `[API] /api/realtime-config` 的记录，以确认失败步骤。
 
 请根据实际需求填写对应值。
+
+调用文本聊天接口时，可以向 `/api/gpt` 发送 `{ messages, model, params }` 格式的请求，其中 `params` 可覆盖温度、最大 Token 等参数；默认值可通过 `GET /api/gpt/params` 获取。
 
 ### 7. 故事页面 AI 工具
 
 在 `account/[workspace]/stories` 页面中集成了多种 Azure AI 服务：
 
-- **Realtime Chat**（`/api/chat/realtime`）用于语音对话；
-- **图像生成** (`/api/image/generate`)、**Bing 新闻搜索** (`/api/bing/news`)、**语音服务** (`/api/speech/token`)；
+- **Text Chat** (`/api/gpt`，可通过 `/api/gpt/params` 获取默认参数)；
+- **Realtime Chat**（`/api/realtime-config`）用于语音对话；
+- **图像生成** (`/api/gpt-image/generate`)、**Bing 新闻搜索** (`/api/bing-search`)、**语音服务** (`/api/speech/token`)；
 - **Sora 视频生成** (`/api/sora/generate` 与 `/api/sora/status/[jobId]`)；
 
 这些功能均以按钮形式呈现，可在本地环境中直接体验。
+
+## 代码库结构与功能概览
+
+本项目基于 Next.js 架构，前后端代码集中在 `src` 目录下，主要模块如下：
+
+- `src/components`：前端 UI 组件，包含 Azure 接入的 **AzureTextChat**、**AzureRealtimeChat**、**BingNews**、**ImageGenerator**、**SoraVideo** 和 **SpeechTools** 等。
+- `src/pages/api`：后端 API 路由，封装了 `/api/gpt`、`/api/realtime-config`、`/api/gpt-image/generate`、`/api/bing-search`、`/api/sora/*`、`/api/speech/token` 等服务。
+- `src/lib/server/azureConfig.js`：统一管理 Azure OpenAI、Realtime 及图像生成的配置，供各个 API 复用。
+
+### Realtime Chat 代码逻辑
+
+1. **前端**：`AzureRealtimeChat` 组件首先向 `/api/realtime-config` 请求临时密钥和 WebRTC 地址，然后建立 `RTCPeerConnection`，创建 `oai-events` DataChannel 并发送 `session.update`，启用服务器端语音端点检测。组件会监听来自 DataChannel 的各种事件：
+   - `conversation.item.input_audio_transcription.delta`/`completed` 事件用于实时累积并保存用户语音转写；
+   - `response.text.delta`/`response.done` 事件构建模型回复并通过 `SpeechSynthesis` 播读。
+   当用户输入文本时，组件改为调用 `/api/gpt` 获取文本回答，同时将对话记录保存到 `/api/conversations/save`。
+2. **后端**：`/api/realtime-config` 在验证用户登录后，调用 Azure Realtime REST 接口创建会话，获取 `client_secret` 作为短期 `ephemeralKey`，并根据地区返回完整的 WebRTC 连接 URL。
+
+了解以上流程后，可以在前端继续扩展更多交互（如自定义事件处理、UI 状态管理），或在后端添加鉴权、日志等逻辑以满足业务需求。
 
 ### 4. 数据库迁移和填充
 

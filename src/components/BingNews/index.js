@@ -9,7 +9,11 @@ const BingNews = () => {
     setLoading(true);
     setArticles([]);
     try {
-      const res = await fetch(`/api/bing/news?q=${encodeURIComponent(query)}`);
+      const res = await fetch('/api/bing-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
       if (res.status === 401) {
         alert('Please log in to fetch news');
         setLoading(false);
@@ -17,7 +21,7 @@ const BingNews = () => {
       }
       const data = await res.json();
       if (res.ok) {
-        setArticles(data.articles || []);
+        setArticles(data || []);
       } else {
         alert(data.error || 'Failed to fetch news');
       }
@@ -49,7 +53,7 @@ const BingNews = () => {
         {articles.map((a, i) => (
           <li key={i}>
             <a href={a.url} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-              {a.name}
+              {a.title || a.name}
             </a>
           </li>
         ))}
@@ -59,3 +63,4 @@ const BingNews = () => {
 };
 
 export default BingNews;
+

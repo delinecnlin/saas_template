@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 
-const RealtimeChat = () => {
+const AzureRealtimeChat = () => {
   const [recording, setRecording] = useState(false);
   const [response, setResponse] = useState('');
   const [messages, setMessages] = useState([]);
@@ -17,37 +17,23 @@ const RealtimeChat = () => {
   }, [messages, response]);
 
   const startRecording = async () => {
-    console.log('[RealtimeChat] requesting session');
+    console.log('[AzureRealtimeChat] requesting config');
     let res;
     try {
-      res = await fetch('/api/chat/realtime', { method: 'POST' });
+      res = await fetch('/api/realtime-config');
     } catch (err) {
-      console.error('[RealtimeChat] failed to reach realtime API', err);
-      alert('Realtime API unreachable');
-      return;
-    }
-
-    console.log('[RealtimeChat] session response status', res.status);
-    if (res.status === 404) {
-      alert('Realtime endpoint missing on server');
-      return;
-    }
-    if (res.status === 401) {
-      alert('Please log in to start a realtime session');
+      console.error('[AzureRealtimeChat] failed to reach realtime config', err);
+      alert('Realtime config unreachable');
       return;
     }
     if (!res.ok) {
-      let message = 'Failed to start realtime session';
-      try {
-        const data = await res.json();
-        if (data?.error) message = data.error;
-      } catch (_) {}
-      alert(message);
+      alert('Failed to load realtime config');
       return;
     }
-    const { ephemeralKey, webrtcUrl, model } = await res.json();
-    console.log('[RealtimeChat] got session', { webrtcUrl, model });
-
+    const { endpoint, apiKey, deployment } = await res.json();
+    const webrtcUrl = endpoint;
+    const ephemeralKey = apiKey;
+    const model = deployment;
 
     const pc = new RTCPeerConnection();
     pcRef.current = pc;
@@ -62,7 +48,7 @@ const RealtimeChat = () => {
     try {
       localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (err) {
-      console.error('[RealtimeChat] microphone access denied', err);
+      console.error('[AzureRealtimeChat] microphone access denied', err);
       alert('Microphone access denied');
       return;
     }
@@ -74,8 +60,7 @@ const RealtimeChat = () => {
     dcRef.current = dc;
 
     dc.addEventListener('open', () => {
-      console.log('[RealtimeChat] data channel open');
-
+      console.log('[AzureRealtimeChat] data channel open');
       dc.send(
         JSON.stringify({
           type: 'session.update',
@@ -121,7 +106,7 @@ const RealtimeChat = () => {
 
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    console.log('[RealtimeChat] sending SDP offer');
+    console.log('[AzureRealtimeChat] sending SDP offer');
 
     let sdpResponse;
     try {
@@ -134,12 +119,11 @@ const RealtimeChat = () => {
         },
       });
     } catch (err) {
-      console.error('[RealtimeChat] failed to send SDP offer', err);
+      console.error('[AzureRealtimeChat] failed to send SDP offer', err);
       alert('Failed to connect to realtime service');
       return;
     }
 
-    console.log('[RealtimeChat] SDP response status', sdpResponse.status);
     if (!sdpResponse.ok) {
       alert('Realtime service rejected SDP offer');
       return;
@@ -147,8 +131,7 @@ const RealtimeChat = () => {
 
     const answer = { type: 'answer', sdp: await sdpResponse.text() };
     await pc.setRemoteDescription(answer);
-    console.log('[RealtimeChat] connection established');
-
+    console.log('[AzureRealtimeChat] connection established');
 
     setRecording(true);
   };
@@ -170,15 +153,11 @@ const RealtimeChat = () => {
       return updated;
     });
     setInput('');
-    const res = await fetch('/api/chat/openai', {
+    const res = await fetch('/api/gpt', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: [...messages, userMsg] }),
     });
-    if (res.status === 401) {
-      alert('Please log in to send messages');
-      return;
-    }
     if (res.ok) {
       const data = await res.json();
       if (data.reply) {
@@ -190,6 +169,8 @@ const RealtimeChat = () => {
         const utter = new SpeechSynthesisUtterance(data.reply);
         speechSynthesis.speak(utter);
       }
+    } else if (res.status === 401) {
+      alert('Please log in to send messages');
     }
   };
 
@@ -252,5 +233,5 @@ const RealtimeChat = () => {
   );
 };
 
-export default RealtimeChat;
+export default AzureRealtimeChat;
 
