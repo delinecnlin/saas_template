@@ -1,5 +1,35 @@
 import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 
+const VoiceWave = ({ testId, color }) => (
+  <div data-testid={testId} className={`flex items-end h-4 ml-2 ${color}`}>
+    <span className="bar" />
+    <span className="bar" />
+    <span className="bar" />
+    <style jsx>{`
+      .bar {
+        width: 3px;
+        margin-right: 2px;
+        background: currentColor;
+        animation: wave 1.2s infinite ease-in-out;
+      }
+      .bar:nth-child(1) {
+        animation-delay: -0.24s;
+      }
+      .bar:nth-child(2) {
+        animation-delay: -0.12s;
+      }
+      @keyframes wave {
+        0%, 40%, 100% {
+          transform: scaleY(0.2);
+        }
+        20% {
+          transform: scaleY(1);
+        }
+      }
+    `}</style>
+  </div>
+);
+
 const AzureRealtimeChat = forwardRef((_, ref) => {
   const [recording, setRecording] = useState(false);
   const [response, setResponse] = useState('');
@@ -239,15 +269,17 @@ const AzureRealtimeChat = forwardRef((_, ref) => {
         {/* Show partial transcript only while the user is speaking */}
         {transcript && (
           <div className="flex justify-end">
-            <div className="max-w-lg p-4 rounded-lg shadow bg-gray-200 text-gray-800 italic opacity-70 whitespace-pre-wrap">
-              {transcript}
+            <div className="max-w-lg p-4 rounded-lg shadow bg-gray-200 text-gray-800 italic opacity-70 whitespace-pre-wrap flex items-center">
+              <span>{transcript}</span>
+              <VoiceWave testId="user-speaking-indicator" color="text-gray-500" />
             </div>
           </div>
         )}
         {response && (
           <div className="flex justify-start">
-            <div className="max-w-lg p-4 rounded-lg shadow bg-blue-100 text-gray-800 whitespace-pre-wrap">
-              {response}
+            <div className="max-w-lg p-4 rounded-lg shadow bg-blue-100 text-gray-800 whitespace-pre-wrap flex items-center">
+              <VoiceWave testId="assistant-speaking-indicator" color="text-blue-500" />
+              <span>{response}</span>
             </div>
           </div>
         )}

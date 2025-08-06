@@ -16,9 +16,9 @@ describe('AzureRealtimeChat transcript bubble', () => {
     });
     const liveBubble = screen.getByText('hello');
     expect(liveBubble).toBeInTheDocument();
-    expect(liveBubble).toHaveClass('italic');
-    expect(liveBubble.parentElement).toHaveClass('flex');
-    expect(liveBubble.parentElement).toHaveClass('justify-end');
+    expect(liveBubble.parentElement).toHaveClass('italic');
+    expect(liveBubble.parentElement.parentElement).toHaveClass('justify-end');
+    expect(screen.getByTestId('user-speaking-indicator')).toBeInTheDocument();
 
     // Complete transcription
     act(() => {
@@ -29,5 +29,6 @@ describe('AzureRealtimeChat transcript bubble', () => {
     expect(finalBubble).not.toHaveClass('italic');
     // transcript bubble removed, only final message remains
     expect(screen.getAllByText('hello').length).toBe(1);
+    expect(screen.queryByTestId('user-speaking-indicator')).toBeNull();
   });
 });
