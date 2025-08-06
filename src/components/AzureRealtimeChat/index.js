@@ -14,7 +14,7 @@ const AzureRealtimeChat = forwardRef((_, ref) => {
   const transcriptRef = useRef('');
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
   }, [messages, response]);
 
   const saveConversation = async (msgs) => {
@@ -45,8 +45,9 @@ const AzureRealtimeChat = forwardRef((_, ref) => {
    * temporary transcript state. Called when transcription completes.
    */
   const handleTranscriptionComplete = () => {
+    const final = transcriptRef.current;
     setMessages((prev) => {
-      const updated = [...prev, { role: 'user', content: transcriptRef.current }];
+      const updated = [...prev, { role: 'user', content: final }];
       saveConversation(updated);
       return updated;
     });
@@ -266,7 +267,9 @@ const AzureRealtimeChat = forwardRef((_, ref) => {
       </div>
     </div>
   );
-};
+});
+
+AzureRealtimeChat.displayName = 'AzureRealtimeChat';
 
 export default AzureRealtimeChat;
 
