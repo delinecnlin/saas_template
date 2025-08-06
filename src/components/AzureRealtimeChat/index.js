@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 
-const AzureRealtimeChat = () => {
+const AzureRealtimeChat = ({ initialMessages = [], initialResponse = '' }) => {
   const [recording, setRecording] = useState(false);
-  const [response, setResponse] = useState('');
-  const [messages, setMessages] = useState([]);
+  const [response, setResponse] = useState(initialResponse);
+  const [messages, setMessages] = useState(initialMessages);
   const [input, setInput] = useState('');
   const pcRef = useRef(null);
   const dcRef = useRef(null);
@@ -199,19 +199,29 @@ const AzureRealtimeChat = () => {
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 rounded">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div
-              className={`px-3 py-2 rounded-lg max-w-lg whitespace-pre-line ${
-                m.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white text-gray-900 border'
-              }`}
-            >
-              {m.content}
+            <div className="flex flex-col max-w-lg">
+              <span className="text-xs text-gray-500 mb-1">
+                {m.role === 'user' ? 'You' : 'Assistant'}
+              </span>
+              <div
+                className={`px-3 py-2 rounded-lg whitespace-pre-line ${
+                  m.role === 'user'
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white text-gray-900 border'
+                }`}
+              >
+                {m.content}
+              </div>
             </div>
           </div>
         ))}
         {response && (
           <div className="flex justify-start">
-            <div className="px-3 py-2 rounded-lg max-w-lg whitespace-pre-line bg-white text-gray-900 border">
-              {response}
+            <div className="flex flex-col max-w-lg">
+              <span className="text-xs text-gray-500 mb-1">Assistant</span>
+              <div className="px-3 py-2 rounded-lg whitespace-pre-line bg-white text-gray-900 border">
+                {response}
+              </div>
             </div>
           </div>
         )}
