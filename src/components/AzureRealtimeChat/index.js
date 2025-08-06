@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 
-const AzureRealtimeChat = () => {
+const AzureRealtimeChat = forwardRef((_, ref) => {
   const [recording, setRecording] = useState(false);
   const [response, setResponse] = useState('');
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [transcript, setTranscript] = useState('');
   const pcRef = useRef(null);
   const dcRef = useRef(null);
   const localStreamRef = useRef(null);
@@ -15,6 +16,48 @@ const AzureRealtimeChat = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, response]);
+
+  const saveConversation = async (msgs) => {
+    try {
+      await fetch('/api/conversations/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: msgs }),
+      });
+    } catch (e) {
+      console.error('Failed to save conversation', e);
+    }
+  };
+
+  /**
+   * Append a transcription fragment to the in-progress transcript so the UI can
+   * reflect live speech. Used by tests and the data channel handler.
+   *
+   * @param {string} delta Partial transcript text from a transcription delta event.
+   */
+  const handleTranscriptionDelta = (delta) => {
+    transcriptRef.current += delta;
+    setTranscript(transcriptRef.current);
+  };
+
+  /**
+   * Finalize the current transcript, persist it as a user message, and reset the
+   * temporary transcript state. Called when transcription completes.
+   */
+  const handleTranscriptionComplete = () => {
+    setMessages((prev) => {
+      const updated = [...prev, { role: 'user', content: transcriptRef.current }];
+      saveConversation(updated);
+      return updated;
+    });
+    transcriptRef.current = '';
+    setTranscript('');
+  };
+
+  useImperativeHandle(ref, () => ({
+    handleTranscriptionDelta,
+    handleTranscriptionComplete,
+  }));
 
   const startRecording = async () => {
     console.log('[AzureRealtimeChat] requesting config');
@@ -75,14 +118,10 @@ const AzureRealtimeChat = () => {
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === 'conversation.item.input_audio_transcription.delta') {
-          transcriptRef.current += msg.delta;
+          // Append transcription fragments so the UI can show live speech feedback
+          handleTranscriptionDelta(msg.delta);
         } else if (msg.type === 'conversation.item.input_audio_transcription.completed') {
-          setMessages((prev) => {
-            const updated = [...prev, { role: 'user', content: transcriptRef.current }];
-            saveConversation(updated);
-            return updated;
-          });
-          transcriptRef.current = '';
+          handleTranscriptionComplete();
         } else if (msg.type === 'response.text.delta') {
           responseRef.current += msg.delta;
           setResponse(responseRef.current);
@@ -174,18 +213,6 @@ const AzureRealtimeChat = () => {
     }
   };
 
-  const saveConversation = async (msgs) => {
-    try {
-      await fetch('/api/conversations/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: msgs }),
-      });
-    } catch (e) {
-      console.error('Failed to save conversation', e);
-    }
-  };
-
   return (
     <div className="flex flex-col h-full space-y-4">
       <div>
@@ -200,17 +227,25 @@ const AzureRealtimeChat = () => {
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`px-3 py-2 rounded-lg max-w-lg whitespace-pre-line ${
-                m.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white text-gray-900 border'
+              className={`max-w-lg p-4 rounded-lg shadow whitespace-pre-wrap text-gray-800 ${
+                m.role === 'user' ? 'bg-gray-200' : 'bg-blue-100'
               }`}
             >
               {m.content}
             </div>
           </div>
         ))}
+        {/* Show partial transcript only while the user is speaking */}
+        {transcript && (
+          <div className="flex justify-end">
+            <div className="max-w-lg p-4 rounded-lg shadow bg-gray-200 text-gray-800 italic opacity-70 whitespace-pre-wrap">
+              {transcript}
+            </div>
+          </div>
+        )}
         {response && (
           <div className="flex justify-start">
-            <div className="px-3 py-2 rounded-lg max-w-lg whitespace-pre-line bg-white text-gray-900 border">
+            <div className="max-w-lg p-4 rounded-lg shadow bg-blue-100 text-gray-800 whitespace-pre-wrap">
               {response}
             </div>
           </div>
