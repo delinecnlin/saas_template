@@ -1,6 +1,10 @@
 import { useState, useRef, useEffect } from "react";
 import VoiceWave from "./VoiceWave";
 
+const FLOWISE_BASE_URL = process.env.NEXT_PUBLIC_FLOWISE_BASE_URL;
+const FLOWISE_API_KEY = process.env.NEXT_PUBLIC_FLOWISE_API_KEY;
+const FLOWISE_CHATFLOW_ID = process.env.NEXT_PUBLIC_FLOWISE_CHATFLOW_ID;
+
 const AzureRealtimeChat = () => {
   const [recording, setRecording] = useState(false);
   const [response, setResponse] = useState("");
@@ -12,6 +16,7 @@ const AzureRealtimeChat = () => {
   const messagesEndRef = useRef(null);
   const responseRef = useRef("");
   const transcriptRef = useRef("");
+  const sessionIdRef = useRef(crypto.randomUUID());
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -60,19 +65,45 @@ const AzureRealtimeChat = () => {
     const dc = pc.createDataChannel("oai-events");
     dcRef.current = dc;
 
-    dc.addEventListener("open", () => {
+    dc.addEventListener("open", async () => {
       console.log("[AzureRealtimeChat] data channel open");
+      let tools = [];
+      if (FLOWISE_BASE_URL && FLOWISE_CHATFLOW_ID) {
+        try {
+          const resp = await fetch(
+            `${FLOWISE_BASE_URL}/api/v1/openai-realtime/${FLOWISE_CHATFLOW_ID}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                ...(FLOWISE_API_KEY
+                  ? { Authorization: `Bearer ${FLOWISE_API_KEY}` }
+                  : {}),
+              },
+            },
+          );
+          if (resp.ok) {
+            tools = await resp.json();
+          }
+        } catch (err) {
+          console.error(
+            "[AzureRealtimeChat] failed to load Flowise tools",
+            err,
+          );
+        }
+      }
       dc.send(
         JSON.stringify({
           type: "session.update",
           session: {
             turn_detection: { type: "server_vad", create_response: true },
+            tools,
           },
         }),
       );
     });
 
-    dc.addEventListener("message", (event) => {
+    dc.addEventListener("message", async (event) => {
       try {
         const msg = JSON.parse(event.data);
         if (msg.type === "conversation.item.input_audio_transcription.delta") {
@@ -89,6 +120,52 @@ const AzureRealtimeChat = () => {
             return updated;
           });
           transcriptRef.current = "";
+        } else if (msg.type === "response.required_action") {
+          const toolCalls =
+            msg.required_action?.submit_tool_outputs?.tool_calls || [];
+          const toolOutputs = [];
+          for (const call of toolCalls) {
+            try {
+              const args = call.function?.arguments
+                ? JSON.parse(call.function.arguments)
+                : {};
+              const resp = await fetch(
+                `${FLOWISE_BASE_URL}/api/v1/openai-realtime/${FLOWISE_CHATFLOW_ID}`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    ...(FLOWISE_API_KEY
+                      ? { Authorization: `Bearer ${FLOWISE_API_KEY}` }
+                      : {}),
+                  },
+                  body: JSON.stringify({
+                    chatId: sessionIdRef.current,
+                    toolName: call.function?.name,
+                    inputArgs: args,
+                  }),
+                },
+              );
+              const result = await resp.json();
+              toolOutputs.push({
+                tool_call_id: call.id,
+                output: result.output,
+              });
+            } catch (err) {
+              console.error("[AzureRealtimeChat] Flowise tool call failed", err);
+            }
+          }
+          if (toolOutputs.length) {
+            dc.send(
+              JSON.stringify({
+                type: "response.create",
+                response: {
+                  id: msg.response?.id,
+                  tool_outputs: toolOutputs,
+                },
+              }),
+            );
+          }
         } else if (msg.type === "response.text.delta") {
           responseRef.current += msg.delta;
           setResponse(responseRef.current);
