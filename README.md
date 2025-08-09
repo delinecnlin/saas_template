@@ -81,9 +81,9 @@ cp .env.sample .env
 
 这些功能均以按钮形式呈现，可在本地环境中直接体验。
 
-### AzureSpeechChat 语音聊天组件
+### AzureTextChat 语音聊天功能
 
-项目新增了 `AzureSpeechChat` 组件，使用 [Microsoft Cognitive Services Speech SDK](https://www.npmjs.com/package/microsoft-cognitiveservices-speech-sdk) 完成语音识别与合成，实现文字与语音的双向聊天。组件允许在前端分别选择识别语言和语音合成的 Voice。
+`AzureTextChat` 组件集成了 [Microsoft Cognitive Services Speech SDK](https://www.npmjs.com/package/microsoft-cognitiveservices-speech-sdk)，支持语音识别与合成，可在前端分别选择识别语言和语音合成的 Voice，实现文字与语音的双向聊天。
 
 #### 环境变量
 
@@ -99,9 +99,7 @@ cp .env.sample .env
 npm install microsoft-cognitiveservices-speech-sdk
 ```
 
-#### 本地测试
-
-启动开发服务器后访问 [`/test`](http://localhost:3000/test) 页面，可体验语音输入、文字聊天及语音播报功能。
+启动开发服务器后，在文本聊天界面即可体验语音输入、文字聊天及语音播报功能。
 
 ## 代码库结构与功能概览
 
