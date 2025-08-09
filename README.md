@@ -83,15 +83,22 @@ cp .env.sample .env
 
 ### AzureTextChat 语音聊天功能
 
-`AzureTextChat` 组件集成了 [Microsoft Cognitive Services Speech SDK](https://www.npmjs.com/package/microsoft-cognitiveservices-speech-sdk)，支持语音识别与合成，可在前端分别选择识别语言和语音合成的 Voice，实现文字与语音的双向聊天。
+`AzureTextChat` 组件集成了 [Microsoft Cognitive Services Speech SDK](https://www.npmjs.com/package/microsoft-cognitiveservices-speech-sdk)，支持语音识别与合成，并可在前端选择使用 Flowise 或 Dify 作为对话代理，实现文字与语音的双向聊天。
 
 #### 环境变量
 
-在 `.env` 文件中配置以下变量以启用 Azure Speech Service：
+在 `.env` 文件中配置以下变量以启用相关服务：
+
+**Azure Speech Service**
 
 - `AZURE_SPEECH_REGION`：Azure Speech 服务区域，例如 `eastasia`。
 - `AZURE_SPEECH_KEY`：Azure Speech 服务密钥。
 - `NEXT_PUBLIC_AZURE_SPEECH_VOICE`：可选，默认的语音合成 Voice，例如 `en-US-JennyNeural`。
+
+**默认代理配置**
+
+- `FLOWISE_URL`、`FLOWISE_CHATFLOW_ID`、`FLOWISE_API_KEY`
+- `DIFY_API_URL`、`DIFY_API_KEY`
 
 确保安装语音 SDK 依赖：
 
@@ -105,7 +112,7 @@ npm install microsoft-cognitiveservices-speech-sdk
 
 本项目基于 Next.js 架构，前后端代码集中在 `src` 目录下，主要模块如下：
 
-- `src/components`：前端 UI 组件，包含 Azure 接入的 **AzureTextChat**、**AzureRealtimeChat**、**BingNews**、**ImageGenerator** 和 **SoraVideo** 等。
+- `src/components`：前端 UI 组件，包含可选 Flowise/Dify 的 **AzureTextChat**、**AzureRealtimeChat**、**BingNews**、**ImageGenerator** 和 **SoraVideo** 等。
 - `src/pages/api`：后端 API 路由，封装了 `/api/gpt`、`/api/realtime-config`、`/api/gpt-image/generate`、`/api/bing-search`、`/api/sora/*`、`/api/speech/token` 等服务。
 - `src/lib/server/azureConfig.js`：统一管理 Azure OpenAI、Realtime 及图像生成的配置，供各个 API 复用。
 

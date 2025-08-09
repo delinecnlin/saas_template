@@ -19,6 +19,12 @@ const AzureTextChat = () => {
   const [inputLanguage, setInputLanguage] = useState(
     voiceLocaleMap[defaultVoice] || languages[0]
   );
+  const [provider, setProvider] = useState('flowise');
+  const [flowiseUrl, setFlowiseUrl] = useState('');
+  const [flowiseChatflowId, setFlowiseChatflowId] = useState('');
+  const [flowiseApiKey, setFlowiseApiKey] = useState('');
+  const [difyApiKey, setDifyApiKey] = useState('');
+  const [conversationId, setConversationId] = useState(null);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -66,16 +72,35 @@ const AzureTextChat = () => {
     setInput('');
     setSubmitting(true);
     try {
+      const body = {
+        messages: history,
+        provider,
+      };
+      if (provider === 'flowise') {
+        body.flowiseConfig = {
+          apiUrl: flowiseUrl,
+          chatflowId: flowiseChatflowId,
+          apiKey: flowiseApiKey,
+        };
+      } else if (provider === 'dify') {
+        body.difyConfig = {
+          apiKey: difyApiKey,
+          conversation_id: conversationId,
+        };
+      }
       const res = await fetch('/api/gpt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.reply) {
         const updated = [...history, { role: 'assistant', content: data.reply }];
         setMessages(updated);
         speak(data.reply);
+      }
+      if (provider === 'dify' && data.conversation_id) {
+        setConversationId(data.conversation_id);
       }
     } catch (e) {
       console.error(e);
@@ -105,6 +130,54 @@ const AzureTextChat = () => {
 
   return (
     <div className="flex flex-col h-full">
+      <div className="mb-4 space-y-2">
+        <div>
+          <label className="block text-sm mb-1">Agent Provider</label>
+          <select
+            value={provider}
+            onChange={(e) => {
+              setProvider(e.target.value);
+              setConversationId(null);
+            }}
+            className="border rounded p-2"
+          >
+            <option value="flowise">Flowise</option>
+            <option value="dify">Dify</option>
+          </select>
+        </div>
+        {provider === 'flowise' && (
+          <div className="space-y-2">
+            <input
+              className="border rounded p-2 w-full"
+              placeholder="Flowise URL"
+              value={flowiseUrl}
+              onChange={(e) => setFlowiseUrl(e.target.value)}
+            />
+            <input
+              className="border rounded p-2 w-full"
+              placeholder="Flowise Chatflow ID"
+              value={flowiseChatflowId}
+              onChange={(e) => setFlowiseChatflowId(e.target.value)}
+            />
+            <input
+              className="border rounded p-2 w-full"
+              placeholder="Flowise API Key (optional)"
+              value={flowiseApiKey}
+              onChange={(e) => setFlowiseApiKey(e.target.value)}
+            />
+          </div>
+        )}
+        {provider === 'dify' && (
+          <div className="space-y-2">
+            <input
+              className="border rounded p-2 w-full"
+              placeholder="Dify API Key"
+              value={difyApiKey}
+              onChange={(e) => setDifyApiKey(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 rounded">
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
