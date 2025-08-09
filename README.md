@@ -60,6 +60,8 @@ cp .env.sample .env
 - `AZURE_OPENAI_REALTIME_REGION`：用于生成 WebRTC URL 的区域，例如 `eastus2` 对应 `https://eastus2.realtimeapi-preview.ai.azure.com/v1/realtimertc`，服务器在 `/api/realtime-config` 中会根据此值返回完整的 WebRTC 连接地址。
 - `AZURE_REALTIME_KEY`：Azure 实时服务的密钥。
 - `XIAOBING_API_KEY`：用于访问小冰数字人 API 的 Key。
+- `AZURE_SPEECH_REGION` 与 `AZURE_SPEECH_KEY`：Azure Speech Service 的区域与密钥，用于语音合成和识别。
+- `NEXT_PUBLIC_AZURE_SPEECH_VOICE`：默认的语音合成 Voice 名称，可在前端选择其他 Voice。
 - `AZURE_AD_CLIENT_ID`、`AZURE_AD_CLIENT_SECRET`、`AZURE_AD_TENANT_ID`：启用 Azure AD 登录所需的凭据。
 
 调试实时聊天时，可在浏览器控制台查看以 `[AzureRealtimeChat]` 开头的日志，并在服务器输出中查找 `[API] /api/realtime-config` 的记录，以确认失败步骤。
@@ -78,6 +80,28 @@ cp .env.sample .env
 - **Sora 视频生成** (`/api/sora/generate` 与 `/api/sora/status/[jobId]`)；
 
 这些功能均以按钮形式呈现，可在本地环境中直接体验。
+
+### AzureSpeechChat 语音聊天组件
+
+项目新增了 `AzureSpeechChat` 组件，使用 [Microsoft Cognitive Services Speech SDK](https://www.npmjs.com/package/microsoft-cognitiveservices-speech-sdk) 完成语音识别与合成，实现文字与语音的双向聊天。组件允许在前端分别选择识别语言和语音合成的 Voice。
+
+#### 环境变量
+
+在 `.env` 文件中配置以下变量以启用 Azure Speech Service：
+
+- `AZURE_SPEECH_REGION`：Azure Speech 服务区域，例如 `eastasia`。
+- `AZURE_SPEECH_KEY`：Azure Speech 服务密钥。
+- `NEXT_PUBLIC_AZURE_SPEECH_VOICE`：可选，默认的语音合成 Voice，例如 `en-US-JennyNeural`。
+
+确保安装语音 SDK 依赖：
+
+```bash
+npm install microsoft-cognitiveservices-speech-sdk
+```
+
+#### 本地测试
+
+启动开发服务器后访问 [`/test`](http://localhost:3000/test) 页面，可体验语音输入、文字聊天及语音播报功能。
 
 ## 代码库结构与功能概览
 
