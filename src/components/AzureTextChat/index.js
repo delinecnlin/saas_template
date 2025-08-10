@@ -273,7 +273,9 @@ const AzureTextChat = () => {
       if (data.reply) {
         const updated = [...history, { role: 'assistant', content: data.reply }];
         setMessages(updated);
-        await speak(data.reply);
+        if (voiceMode) {
+          await speak(data.reply);
+        }
       }
       if (provider === 'dify' && data.conversation_id) {
         setConversationId(data.conversation_id);
