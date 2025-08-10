@@ -8,6 +8,7 @@ const SoraVideo = () => {
   const [resolution, setResolution] = useState('1080x1080');
   const [seconds, setSeconds] = useState(5);
   const [variants, setVariants] = useState(1);
+  const [error, setError] = useState('');
   const pollRef = useRef(null);
 
   useEffect(() => {
@@ -20,7 +21,13 @@ const SoraVideo = () => {
     pollRef.current = setInterval(async () => {
       try {
         const res = await fetch(`/api/sora/status/${jobId}`);
-        if (!res.ok) return;
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          setError(errData.error || 'Failed to get job status');
+          clearInterval(pollRef.current);
+          pollRef.current = null;
+          return;
+        }
         const data = await res.json();
         setStatus(data.status);
         if (data.status === 'succeeded') {
@@ -35,6 +42,15 @@ const SoraVideo = () => {
         } else if (data.status === 'failed' || data.status === 'cancelled') {
           clearInterval(pollRef.current);
           pollRef.current = null;
+          const err =
+            data.error ||
+            data.data?.error?.message ||
+            data.data?.error ||
+            data.data?.status_information;
+          if (err) {
+            console.error('Sora job failed', err);
+            setError(err);
+          }
         }
       } catch (e) {
         console.error('Failed to poll status', e);
@@ -47,6 +63,7 @@ const SoraVideo = () => {
     setLoading(true);
     setStatus('');
     setVideoUrl('');
+    setError('');
     try {
       const [width, height] = resolution.split('x').map(Number);
       const res = await fetch('/api/sora/generate', {
@@ -70,10 +87,13 @@ const SoraVideo = () => {
         setStatus(data.status);
         startPoll(data.jobId);
       } else {
-        alert(data.error || 'Failed to start video generation');
+        const msg = data.error || 'Failed to start video generation';
+        setError(msg);
+        alert(msg);
       }
     } catch (err) {
       console.error('Sora generate error', err);
+      setError('Failed to start video generation');
       alert('Failed to start video generation');
     }
     setLoading(false);
@@ -127,6 +147,7 @@ const SoraVideo = () => {
         {loading ? 'Generating...' : 'Generate Video'}
       </button>
       {status && <div>Status: {status}</div>}
+      {error && <div className="text-red-600">Error: {error}</div>}
       {videoUrl && (
         <div className="space-y-2">
           <video controls className="w-full rounded">

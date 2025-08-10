@@ -26,7 +26,11 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to get job status' });
     }
     const data = await resp.json();
-    return res.status(200).json({ status: data.status, data });
+    const error = data.error?.message || data.error || data.status_information;
+    if (data.status === 'failed' && error) {
+      console.error('Sora job failed', error);
+    }
+    return res.status(200).json({ status: data.status, error, data });
   } catch (err) {
     console.error('Sora status error', err);
     return res.status(500).json({ error: 'Failed to get job status' });

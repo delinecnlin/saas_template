@@ -42,10 +42,17 @@ export default async function handler(req, res) {
     if (!resp.ok) {
       const text = await resp.text();
       console.error('Sora generate failed', text);
-      return res.status(500).json({ error: 'Failed to start video generation' });
+      return res
+        .status(500)
+        .json({ error: text || 'Failed to start video generation' });
     }
 
     const data = await resp.json();
+    if (data.error) {
+      const msg = data.error?.message || data.error;
+      console.error('Sora generate returned error', msg);
+      return res.status(500).json({ error: msg });
+    }
     return res.status(200).json({ jobId: data.id, status: data.status, data });
   } catch (err) {
     console.error('Sora generate error', err);
