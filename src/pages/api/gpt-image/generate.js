@@ -13,7 +13,12 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { prompt, size = '1024x1024' } = req.body || {};
+  const {
+    prompt,
+    size = '1024x1024',
+    quality = 'standard',
+    style = 'vivid',
+  } = req.body || {};
   const { endpoint, deployment, apiKey, apiVersion } = getImageConfig();
 
   try {
@@ -24,7 +29,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
         'api-key': apiKey,
       },
-      body: JSON.stringify({ prompt, size }),
+      body: JSON.stringify({ prompt, size, quality, style }),
     });
 
     if (!resp.ok) {

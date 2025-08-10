@@ -5,6 +5,10 @@ const SoraVideo = () => {
   const [status, setStatus] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [loading, setLoading] = useState(false);
+  const [aspectRatio, setAspectRatio] = useState('16:9');
+  const [resolution, setResolution] = useState('720p');
+  const [duration, setDuration] = useState(5);
+  const [variants, setVariants] = useState(1);
   const pollRef = useRef(null);
 
   useEffect(() => {
@@ -46,7 +50,13 @@ const SoraVideo = () => {
       const res = await fetch('/api/sora/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
+        body: JSON.stringify({
+          prompt,
+          aspectRatio,
+          resolution,
+          duration,
+          variants,
+        }),
       });
       if (res.status === 401) {
         alert('Please log in to generate videos');
@@ -76,6 +86,44 @@ const SoraVideo = () => {
         rows={3}
         placeholder="Describe the video you want..."
       />
+      <div className="grid grid-cols-2 gap-2">
+        <select
+          className="border rounded p-2"
+          value={aspectRatio}
+          onChange={(e) => setAspectRatio(e.target.value)}
+        >
+          <option value="16:9">16:9</option>
+          <option value="9:16">9:16</option>
+          <option value="1:1">1:1</option>
+        </select>
+        <select
+          className="border rounded p-2"
+          value={resolution}
+          onChange={(e) => setResolution(e.target.value)}
+        >
+          <option value="480p">480p</option>
+          <option value="720p">720p</option>
+          <option value="1080p">1080p</option>
+        </select>
+        <select
+          className="border rounded p-2"
+          value={duration}
+          onChange={(e) => setDuration(Number(e.target.value))}
+        >
+          <option value={5}>5s</option>
+          <option value={10}>10s</option>
+          <option value={15}>15s</option>
+        </select>
+        <select
+          className="border rounded p-2"
+          value={variants}
+          onChange={(e) => setVariants(Number(e.target.value))}
+        >
+          <option value={1}>1</option>
+          <option value={2}>2</option>
+          <option value={3}>3</option>
+        </select>
+      </div>
       <button
         onClick={generate}
         disabled={loading}
