@@ -5,9 +5,9 @@ const SoraVideo = () => {
   const [status, setStatus] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [aspectRatio, setAspectRatio] = useState('16:9');
-  const [resolution, setResolution] = useState('720p');
-  const [duration, setDuration] = useState(5);
+  const [width, setWidth] = useState(1080);
+  const [height, setHeight] = useState(1080);
+  const [seconds, setSeconds] = useState(5);
   const [variants, setVariants] = useState(1);
   const pollRef = useRef(null);
 
@@ -54,10 +54,10 @@ const SoraVideo = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt,
-          aspectRatio,
-          resolution,
-          duration,
-          variants,
+          width,
+          height,
+          n_seconds: seconds,
+          n_variants: variants,
         }),
       });
       if (res.status === 401) {
@@ -89,42 +89,34 @@ const SoraVideo = () => {
         placeholder="Describe the video you want..."
       />
       <div className="grid grid-cols-2 gap-2">
-        <select
+        <input
+          type="number"
           className="border rounded p-2"
-          value={aspectRatio}
-          onChange={(e) => setAspectRatio(e.target.value)}
-        >
-          <option value="16:9">16:9</option>
-          <option value="9:16">9:16</option>
-          <option value="1:1">1:1</option>
-        </select>
-        <select
+          value={width}
+          onChange={(e) => setWidth(Number(e.target.value))}
+          placeholder="Width"
+        />
+        <input
+          type="number"
           className="border rounded p-2"
-          value={resolution}
-          onChange={(e) => setResolution(e.target.value)}
-        >
-          <option value="480p">480p</option>
-          <option value="720p">720p</option>
-          <option value="1080p">1080p</option>
-        </select>
-        <select
+          value={height}
+          onChange={(e) => setHeight(Number(e.target.value))}
+          placeholder="Height"
+        />
+        <input
+          type="number"
           className="border rounded p-2"
-          value={duration}
-          onChange={(e) => setDuration(Number(e.target.value))}
-        >
-          <option value={5}>5s</option>
-          <option value={10}>10s</option>
-          <option value={15}>15s</option>
-        </select>
-        <select
+          value={seconds}
+          onChange={(e) => setSeconds(Number(e.target.value))}
+          placeholder="Seconds"
+        />
+        <input
+          type="number"
           className="border rounded p-2"
           value={variants}
           onChange={(e) => setVariants(Number(e.target.value))}
-        >
-          <option value={1}>1</option>
-          <option value={2}>2</option>
-          <option value={3}>3</option>
-        </select>
+          placeholder="Variants"
+        />
       </div>
       <button
         onClick={generate}
