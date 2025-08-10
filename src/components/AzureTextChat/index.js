@@ -20,10 +20,18 @@ const AzureTextChat = () => {
     voiceLocaleMap[defaultVoice] || languages[0]
   );
   const [provider, setProvider] = useState('flowise');
-  const [flowiseUrl, setFlowiseUrl] = useState('');
-  const [flowiseChatflowId, setFlowiseChatflowId] = useState('');
-  const [flowiseApiKey, setFlowiseApiKey] = useState('');
-  const [difyApiKey, setDifyApiKey] = useState('');
+  const [flowiseUrl, setFlowiseUrl] = useState(
+    process.env.NEXT_PUBLIC_FLOWISE_URL || ''
+  );
+  const [flowiseChatflowId, setFlowiseChatflowId] = useState(
+    process.env.NEXT_PUBLIC_FLOWISE_CHATFLOW_ID || ''
+  );
+  const [flowiseApiKey, setFlowiseApiKey] = useState(
+    process.env.NEXT_PUBLIC_FLOWISE_API_KEY || ''
+  );
+  const [difyApiKey, setDifyApiKey] = useState(
+    process.env.NEXT_PUBLIC_DIFY_API_KEY || ''
+  );
   const [conversationId, setConversationId] = useState(null);
   const messagesEndRef = useRef(null);
 
@@ -77,16 +85,16 @@ const AzureTextChat = () => {
         provider,
       };
       if (provider === 'flowise') {
-        body.flowiseConfig = {
-          apiUrl: flowiseUrl,
-          chatflowId: flowiseChatflowId,
-          apiKey: flowiseApiKey,
-        };
+        body.flowiseConfig = {};
+        if (flowiseUrl) body.flowiseConfig.apiUrl = flowiseUrl;
+        if (flowiseChatflowId)
+          body.flowiseConfig.chatflowId = flowiseChatflowId;
+        if (flowiseApiKey) body.flowiseConfig.apiKey = flowiseApiKey;
       } else if (provider === 'dify') {
-        body.difyConfig = {
-          apiKey: difyApiKey,
-          conversation_id: conversationId,
-        };
+        body.difyConfig = {};
+        if (difyApiKey) body.difyConfig.apiKey = difyApiKey;
+        if (conversationId)
+          body.difyConfig.conversation_id = conversationId;
       }
       const res = await fetch('/api/gpt', {
         method: 'POST',
@@ -94,6 +102,10 @@ const AzureTextChat = () => {
         body: JSON.stringify(body),
       });
       const data = await res.json();
+      if (!res.ok) {
+        console.error('Chat error', data.error || res.statusText);
+        return;
+      }
       if (data.reply) {
         const updated = [...history, { role: 'assistant', content: data.reply }];
         setMessages(updated);

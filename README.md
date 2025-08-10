@@ -98,7 +98,11 @@ cp .env.sample .env
 **默认代理配置**
 
 - `FLOWISE_URL`、`FLOWISE_CHATFLOW_ID`、`FLOWISE_API_KEY`
+- `NEXT_PUBLIC_FLOWISE_URL`、`NEXT_PUBLIC_FLOWISE_CHATFLOW_ID`、`NEXT_PUBLIC_FLOWISE_API_KEY`
 - `DIFY_API_URL`、`DIFY_API_KEY`
+- `NEXT_PUBLIC_DIFY_API_KEY`
+
+前端表单会读取 `NEXT_PUBLIC_*` 变量作为初始值，若输入框留空则自动回退到服务器端对应的 `FLOWISE_*` 或 `DIFY_*` 配置。
 
 确保安装语音 SDK 依赖：
 

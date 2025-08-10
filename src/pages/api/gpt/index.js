@@ -24,11 +24,10 @@ export default async function handler(req, res) {
 
   try {
     if (provider === 'flowise') {
-      const {
-        apiUrl = process.env.FLOWISE_URL,
-        chatflowId = process.env.FLOWISE_CHATFLOW_ID,
-        apiKey = process.env.FLOWISE_API_KEY,
-      } = flowiseConfig;
+      const apiUrl = flowiseConfig.apiUrl || process.env.FLOWISE_URL;
+      const chatflowId =
+        flowiseConfig.chatflowId || process.env.FLOWISE_CHATFLOW_ID;
+      const apiKey = flowiseConfig.apiKey || process.env.FLOWISE_API_KEY;
 
       if (!apiUrl || !chatflowId) {
         return res
@@ -47,7 +46,9 @@ export default async function handler(req, res) {
       if (!resp.ok) {
         const text = await resp.text();
         console.error('Flowise chat error', text);
-        return res.status(500).json({ error: 'Failed to generate reply' });
+        return res
+          .status(resp.status)
+          .json({ error: text || 'Failed to generate reply' });
       }
       const data = await resp.json();
       const reply =
@@ -56,11 +57,10 @@ export default async function handler(req, res) {
     }
 
     if (provider === 'dify') {
-      const {
-        apiKey = process.env.DIFY_API_KEY,
-        apiUrl = process.env.DIFY_API_URL || 'https://api.dify.ai/v1',
-        conversation_id,
-      } = difyConfig;
+      const apiKey = difyConfig.apiKey || process.env.DIFY_API_KEY;
+      const apiUrl =
+        difyConfig.apiUrl || process.env.DIFY_API_URL || 'https://api.dify.ai/v1';
+      const { conversation_id } = difyConfig;
 
       if (!apiKey) {
         return res.status(400).json({ error: 'Missing Dify API key' });
@@ -80,7 +80,9 @@ export default async function handler(req, res) {
       if (!resp.ok) {
         const text = await resp.text();
         console.error('Dify chat error', text);
-        return res.status(500).json({ error: 'Failed to generate reply' });
+        return res
+          .status(resp.status)
+          .json({ error: text || 'Failed to generate reply' });
       }
       const data = await resp.json();
       const reply = data.answer || data.output || '';
