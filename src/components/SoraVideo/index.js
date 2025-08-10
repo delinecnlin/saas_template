@@ -29,7 +29,9 @@ const SoraVideo = () => {
           pollRef.current = null;
           const url =
             data.data?.generations?.[0]?.output?.[0]?.assets?.video ||
-            data.data?.generations?.[0]?.assets?.video;
+            data.data?.generations?.[0]?.assets?.video ||
+            data.data?.result?.data?.[0]?.url ||
+            data.data?.result?.data?.[0]?.asset_url;
           if (url) setVideoUrl(url);
         } else if (data.status === 'failed' || data.status === 'cancelled') {
           clearInterval(pollRef.current);
@@ -133,9 +135,19 @@ const SoraVideo = () => {
       </button>
       {status && <div>Status: {status}</div>}
       {videoUrl && (
-        <video controls className="w-full rounded">
-          <source src={videoUrl} type="video/mp4" />
-        </video>
+        <div className="space-y-2">
+          <video controls className="w-full rounded">
+            <source src={videoUrl} type="video/mp4" />
+          </video>
+          <a
+            href={videoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline"
+          >
+            Open video in new tab
+          </a>
+        </div>
       )}
     </div>
   );

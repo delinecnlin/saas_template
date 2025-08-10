@@ -24,8 +24,14 @@ const ImageGenerator = () => {
         return;
       }
       const data = await res.json();
-      if (res.ok && data.b64) {
-        setImage(`data:image/png;base64,${data.b64}`);
+      if (res.ok) {
+        if (data.b64) {
+          setImage(`data:image/png;base64,${data.b64}`);
+        } else if (data.url) {
+          setImage(data.url);
+        } else {
+          alert('Failed to generate image');
+        }
       } else {
         alert(data.error || 'Failed to generate image');
       }
@@ -80,7 +86,17 @@ const ImageGenerator = () => {
         {loading ? 'Generating...' : 'Generate Image'}
       </button>
       {image && (
-        <img src={image} alt="Generated" className="max-w-full rounded" />
+        <div className="space-y-2">
+          <img src={image} alt="Generated" className="max-w-full rounded" />
+          <a
+            href={image}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 underline"
+          >
+            Open image in new tab
+          </a>
+        </div>
       )}
     </div>
   );

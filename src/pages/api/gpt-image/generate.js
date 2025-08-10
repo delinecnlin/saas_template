@@ -39,8 +39,10 @@ export default async function handler(req, res) {
     }
 
     const data = await resp.json();
-    const b64 = data.data?.[0]?.b64_json || '';
-    return res.status(200).json({ b64 });
+    const first = data.data?.[0] || {};
+    const b64 = first.b64_json || '';
+    const urlOut = first.url || '';
+    return res.status(200).json({ b64, url: urlOut });
   } catch (err) {
     console.error('Image generation exception', err);
     return res.status(500).json({ error: 'Failed to generate image' });
