@@ -2,13 +2,15 @@ import { useState, useRef, useEffect } from 'react';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 
 const voiceLocaleMap = {
-  'en-US-JennyNeural': 'en-US',
   'zh-CN-XiaoxiaoNeural': 'zh-CN',
+  'en-US-JennyNeural': 'en-US',
+  'de-DE-KatjaNeural': 'de-DE',
   'ja-JP-NanamiNeural': 'ja-JP',
 };
 const voices = Object.keys(voiceLocaleMap);
 const languages = [...new Set(Object.values(voiceLocaleMap))];
-const defaultVoice = process.env.NEXT_PUBLIC_AZURE_SPEECH_VOICE || voices[0];
+const defaultVoice =
+  process.env.NEXT_PUBLIC_AZURE_SPEECH_VOICE || 'zh-CN-XiaoxiaoNeural';
 
 const Waveform = ({ color = 'bg-green-500' }) => (
   <>
@@ -86,6 +88,20 @@ const AzureTextChat = () => {
       try {
         const cfg = JSON.parse(storedDify);
         setDifyApiKey(cfg.apiKey || '');
+      } catch {}
+    }
+    const storedVoice = localStorage.getItem('voiceConfig');
+    if (storedVoice) {
+      try {
+        const cfg = JSON.parse(storedVoice);
+        if (cfg.voice) {
+          setVoice(cfg.voice);
+          setInputLanguage(
+            cfg.inputLanguage || voiceLocaleMap[cfg.voice] || languages[0]
+          );
+        } else if (cfg.inputLanguage) {
+          setInputLanguage(cfg.inputLanguage);
+        }
       } catch {}
     }
   }, []);
@@ -203,6 +219,10 @@ const AzureTextChat = () => {
     localStorage.setItem(
       'difyConfig',
       JSON.stringify({ apiKey: difyApiKey })
+    );
+    localStorage.setItem(
+      'voiceConfig',
+      JSON.stringify({ voice, inputLanguage })
     );
     setSavedNotice('Saved');
     setTimeout(() => setSavedNotice(''), 2000);

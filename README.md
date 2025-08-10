@@ -61,7 +61,7 @@ cp .env.sample .env
 - `AZURE_REALTIME_KEY`：Azure 实时服务的密钥。
 - `XIAOBING_API_KEY`：用于访问小冰数字人 API 的 Key。
 - `AZURE_SPEECH_REGION` 与 `AZURE_SPEECH_KEY`：Azure Speech Service 的区域与密钥，用于语音合成和识别。
-- `NEXT_PUBLIC_AZURE_SPEECH_VOICE`：默认的语音合成 Voice 名称，可在前端选择其他 Voice。
+- `NEXT_PUBLIC_AZURE_SPEECH_VOICE`：默认的语音合成 Voice 名称（默认为 `zh-CN-XiaoxiaoNeural`），可在前端选择包括德语在内的其他 Voice。
 - `AZURE_AD_CLIENT_ID`、`AZURE_AD_CLIENT_SECRET`、`AZURE_AD_TENANT_ID`：启用 Azure AD 登录所需的凭据。
 
 调试实时聊天时，可在浏览器控制台查看以 `[AzureRealtimeChat]` 开头的日志，并在服务器输出中查找 `[API] /api/realtime-config` 的记录，以确认失败步骤。
@@ -83,7 +83,7 @@ cp .env.sample .env
 
 ### AzureTextChat 语音聊天功能
 
-`AzureTextChat` 组件集成了 [Microsoft Cognitive Services Speech SDK](https://www.npmjs.com/package/microsoft-cognitiveservices-speech-sdk)，支持语音识别与合成，并可在前端选择使用 Flowise 或 Dify 作为对话代理，实现文字与语音的双向聊天。输入框在用户开始键入后会显示发送按钮；点击麦克风图标则进入一问一答的语音模式，此时禁用键盘输入，录音与播报阶段均会显示动态音波。
+`AzureTextChat` 组件集成了 [Microsoft Cognitive Services Speech SDK](https://www.npmjs.com/package/microsoft-cognitiveservices-speech-sdk)，支持语音识别与合成，并可在前端选择使用 Flowise 或 Dify 作为对话代理，实现文字与语音的双向聊天。输入框在用户开始键入后会显示发送按钮；点击麦克风图标则进入一问一答的语音模式，此时禁用键盘输入，录音与播报阶段均会显示动态音波。界面同时提供语音输入语言和播报 Voice 的下拉框（默认 `zh-CN`，也支持德语等），并可通过上方的 “Save” 按钮保存这些语音设置。
 
 #### 环境变量
 
@@ -93,7 +93,7 @@ cp .env.sample .env
 
 - `AZURE_SPEECH_REGION`：Azure Speech 服务区域，例如 `eastasia`。
 - `AZURE_SPEECH_KEY`：Azure Speech 服务密钥。
-- `NEXT_PUBLIC_AZURE_SPEECH_VOICE`：可选，默认的语音合成 Voice，例如 `en-US-JennyNeural`。
+- `NEXT_PUBLIC_AZURE_SPEECH_VOICE`：可选，默认的语音合成 Voice，默认为 `zh-CN-XiaoxiaoNeural`。
 
 **默认代理配置**
 
@@ -102,7 +102,7 @@ cp .env.sample .env
 - `DIFY_API_URL`、`DIFY_API_KEY`
 - `NEXT_PUBLIC_DIFY_API_KEY`
 
-前端表单会读取 `NEXT_PUBLIC_*` 变量作为初始值，若输入框留空则自动回退到服务器端对应的 `FLOWISE_*` 或 `DIFY_*` 配置。界面提供 “Save” 按钮，可将当前选项保存到浏览器本地存储，刷新后仍会保留。
+前端表单会读取 `NEXT_PUBLIC_*` 变量作为初始值，若输入框留空则自动回退到服务器端对应的 `FLOWISE_*` 或 `DIFY_*` 配置。界面提供 “Save” 按钮，可将代理与语音设置保存到浏览器本地存储，刷新后仍会保留。
 
 确保安装语音 SDK 依赖：
 
