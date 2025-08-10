@@ -83,7 +83,7 @@ cp .env.sample .env
 
 ### AzureTextChat 语音聊天功能
 
-`AzureTextChat` 组件集成了 [Microsoft Cognitive Services Speech SDK](https://www.npmjs.com/package/microsoft-cognitiveservices-speech-sdk)，支持语音识别与合成，并可在前端选择使用 Flowise 或 Dify 作为对话代理，实现文字与语音的双向聊天。
+`AzureTextChat` 组件集成了 [Microsoft Cognitive Services Speech SDK](https://www.npmjs.com/package/microsoft-cognitiveservices-speech-sdk)，支持语音识别与合成，并可在前端选择使用 Flowise 或 Dify 作为对话代理，实现文字与语音的双向聊天。输入框在用户开始键入后会显示发送按钮；点击麦克风图标则进入一问一答的语音模式，此时禁用键盘输入，录音与播报阶段均会显示动态音波。
 
 #### 环境变量
 

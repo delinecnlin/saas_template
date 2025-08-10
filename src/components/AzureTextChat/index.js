@@ -10,11 +10,38 @@ const voices = Object.keys(voiceLocaleMap);
 const languages = [...new Set(Object.values(voiceLocaleMap))];
 const defaultVoice = process.env.NEXT_PUBLIC_AZURE_SPEECH_VOICE || voices[0];
 
+const Waveform = ({ color = 'bg-green-500' }) => (
+  <>
+    <div className="flex items-end h-4 space-x-1">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          className={`w-1 ${color} wave-bar`}
+          style={{ animationDelay: `${i * 0.1}s` }}
+        />
+      ))}
+    </div>
+    <style jsx>{`
+      .wave-bar {
+        animation: wave 1s infinite;
+        transform-origin: bottom;
+      }
+      @keyframes wave {
+        0% { height: 20%; }
+        50% { height: 100%; }
+        100% { height: 20%; }
+      }
+    `}</style>
+  </>
+);
+
 const AzureTextChat = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isSubmitting, setSubmitting] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [speaking, setSpeaking] = useState(false);
+  const [voiceMode, setVoiceMode] = useState(false);
   const [voice, setVoice] = useState(defaultVoice);
   const [inputLanguage, setInputLanguage] = useState(
     voiceLocaleMap[defaultVoice] || languages[0]
@@ -87,18 +114,25 @@ const AzureTextChat = () => {
     const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
     synthRef.current = synthesizer;
-    synthesizer.speakTextAsync(
-      text,
-      () => {
-        synthesizer.close();
-        if (synthRef.current === synthesizer) synthRef.current = null;
-      },
-      (err) => {
-        console.error('speak error', err);
-        synthesizer.close();
-        if (synthRef.current === synthesizer) synthRef.current = null;
-      }
-    );
+    setSpeaking(true);
+    return new Promise((resolve) => {
+      synthesizer.speakTextAsync(
+        text,
+        () => {
+          synthesizer.close();
+          if (synthRef.current === synthesizer) synthRef.current = null;
+          setSpeaking(false);
+          resolve();
+        },
+        (err) => {
+          console.error('speak error', err);
+          synthesizer.close();
+          if (synthRef.current === synthesizer) synthRef.current = null;
+          setSpeaking(false);
+          resolve();
+        }
+      );
+    });
   };
 
   const stop = () => {
@@ -108,7 +142,52 @@ const AzureTextChat = () => {
       synthRef.current.close();
       synthRef.current = null;
     }
+    setVoiceMode(false);
+    setRecording(false);
+    setSpeaking(false);
     setSubmitting(false);
+  };
+
+  const recognizeOnce = async () => {
+    const data = await getToken();
+    if (!data) return null;
+    setRecording(true);
+    const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(
+      data.token,
+      data.region
+    );
+    speechConfig.speechRecognitionLanguage = inputLanguage;
+    const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
+    const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+    return new Promise((resolve) => {
+      recognizer.recognizeOnceAsync(
+        (result) => {
+          setRecording(false);
+          recognizer.close();
+          resolve(result.text);
+        },
+        () => {
+          setRecording(false);
+          recognizer.close();
+          resolve(null);
+        }
+      );
+    });
+  };
+
+  const voiceLoop = async () => {
+    if (!voiceMode) return;
+    const text = await recognizeOnce();
+    if (text) {
+      await sendMessage(text);
+    }
+    if (voiceMode) voiceLoop();
+  };
+
+  const startVoiceMode = () => {
+    if (voiceMode) return;
+    setVoiceMode(true);
+    voiceLoop();
   };
 
   const saveSettings = () => {
@@ -174,7 +253,7 @@ const AzureTextChat = () => {
       if (data.reply) {
         const updated = [...history, { role: 'assistant', content: data.reply }];
         setMessages(updated);
-        speak(data.reply);
+        await speak(data.reply);
       }
       if (provider === 'dify' && data.conversation_id) {
         setConversationId(data.conversation_id);
@@ -183,26 +262,6 @@ const AzureTextChat = () => {
       if (e.name !== 'AbortError') console.error(e);
     }
     setSubmitting(false);
-  };
-
-  const startRecording = async () => {
-    const data = await getToken();
-    if (!data) return;
-    setRecording(true);
-    const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(
-      data.token,
-      data.region
-    );
-    speechConfig.speechRecognitionLanguage = inputLanguage;
-    const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
-    const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
-    recognizer.recognizeOnceAsync((result) => {
-      setRecording(false);
-      recognizer.close();
-      if (result.text) {
-        sendMessage(result.text);
-      }
-    });
   };
 
   return (
@@ -318,31 +377,41 @@ const AzureTextChat = () => {
               (e.preventDefault(), input.trim() && sendMessage(input.trim()))
             }
             placeholder="Type your message..."
+            disabled={voiceMode}
           />
-          <button
-            type="submit"
-            disabled={isSubmitting || !input.trim()}
-            className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-          >
-            Send
-          </button>
+          {!voiceMode && input.trim() && (
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+            >
+              Send
+            </button>
+          )}
           <button
             type="button"
             onClick={stop}
-            disabled={!isSubmitting && !synthRef.current}
+            disabled={!isSubmitting && !synthRef.current && !voiceMode}
             className="px-4 py-2 bg-red-600 text-white rounded disabled:opacity-50"
           >
             Stop
           </button>
           <button
             type="button"
-            onClick={startRecording}
-            disabled={recording}
-            className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
+            onClick={startVoiceMode}
+            disabled={voiceMode || isSubmitting}
+            className="p-2 bg-blue-600 text-white rounded disabled:opacity-50"
+            aria-label="Start voice chat"
           >
-            {recording ? 'Listening...' : 'Speak'}
+            🎤
           </button>
         </div>
+        {(recording || speaking) && (
+          <div className="mt-2">
+            {recording && <Waveform color="bg-green-500" />}
+            {speaking && <Waveform color="bg-blue-500" />}
+          </div>
+        )}
         <div className="flex space-x-4">
           <div>
             <label className="block text-sm mb-1">Input language</label>
