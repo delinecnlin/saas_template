@@ -388,14 +388,15 @@ const AzureTextChat = () => {
               Send
             </button>
           )}
-          <button
-            type="button"
-            onClick={stop}
-            disabled={!isSubmitting && !synthRef.current && !voiceMode}
-            className="px-4 py-2 bg-red-600 text-white rounded disabled:opacity-50"
-          >
-            Stop
-          </button>
+          {voiceMode && (
+            <button
+              type="button"
+              onClick={stop}
+              className="px-4 py-2 bg-red-600 text-white rounded"
+            >
+              Stop
+            </button>
+          )}
           <button
             type="button"
             onClick={startVoiceMode}
