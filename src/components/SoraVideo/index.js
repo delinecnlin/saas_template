@@ -5,8 +5,7 @@ const SoraVideo = () => {
   const [status, setStatus] = useState('');
   const [videoUrl, setVideoUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [width, setWidth] = useState(1080);
-  const [height, setHeight] = useState(1080);
+  const [resolution, setResolution] = useState('1080x1080');
   const [seconds, setSeconds] = useState(5);
   const [variants, setVariants] = useState(1);
   const pollRef = useRef(null);
@@ -49,6 +48,7 @@ const SoraVideo = () => {
     setStatus('');
     setVideoUrl('');
     try {
+      const [width, height] = resolution.split('x').map(Number);
       const res = await fetch('/api/sora/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,35 +88,36 @@ const SoraVideo = () => {
         rows={3}
         placeholder="Describe the video you want..."
       />
-      <div className="grid grid-cols-2 gap-2">
-        <input
-          type="number"
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+        <select
           className="border rounded p-2"
-          value={width}
-          onChange={(e) => setWidth(Number(e.target.value))}
-          placeholder="Width"
-        />
-        <input
-          type="number"
-          className="border rounded p-2"
-          value={height}
-          onChange={(e) => setHeight(Number(e.target.value))}
-          placeholder="Height"
-        />
-        <input
-          type="number"
+          value={resolution}
+          onChange={(e) => setResolution(e.target.value)}
+        >
+          <option value="1080x1080">1080x1080</option>
+          <option value="1920x1080">1920x1080</option>
+          <option value="1080x1920">1080x1920</option>
+          <option value="1280x720">1280x720</option>
+        </select>
+        <select
           className="border rounded p-2"
           value={seconds}
           onChange={(e) => setSeconds(Number(e.target.value))}
-          placeholder="Seconds"
-        />
-        <input
-          type="number"
+        >
+          <option value={5}>5s</option>
+          <option value={10}>10s</option>
+          <option value={15}>15s</option>
+        </select>
+        <select
           className="border rounded p-2"
           value={variants}
           onChange={(e) => setVariants(Number(e.target.value))}
-          placeholder="Variants"
-        />
+        >
+          <option value={1}>1</option>
+          <option value={2}>2</option>
+          <option value={3}>3</option>
+          <option value={4}>4</option>
+        </select>
       </div>
       <button
         onClick={generate}
