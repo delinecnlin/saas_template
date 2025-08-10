@@ -34,6 +34,8 @@ const AzureTextChat = () => {
   );
   const [conversationId, setConversationId] = useState(null);
   const messagesEndRef = useRef(null);
+  const abortRef = useRef(null);
+  const synthRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -62,14 +64,29 @@ const AzureTextChat = () => {
     speechConfig.speechSynthesisVoiceName = voice;
     const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
     const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
+    synthRef.current = synthesizer;
     synthesizer.speakTextAsync(
       text,
-      () => synthesizer.close(),
+      () => {
+        synthesizer.close();
+        if (synthRef.current === synthesizer) synthRef.current = null;
+      },
       (err) => {
         console.error('speak error', err);
         synthesizer.close();
+        if (synthRef.current === synthesizer) synthRef.current = null;
       }
     );
+  };
+
+  const stop = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    if (synthRef.current) {
+      synthRef.current.close();
+      synthRef.current = null;
+    }
+    setSubmitting(false);
   };
 
   const sendMessage = async (content) => {
@@ -90,21 +107,29 @@ const AzureTextChat = () => {
         if (flowiseChatflowId)
           body.flowiseConfig.chatflowId = flowiseChatflowId;
         if (flowiseApiKey) body.flowiseConfig.apiKey = flowiseApiKey;
+        console.log('Sending Flowise chat request', body);
       } else if (provider === 'dify') {
         body.difyConfig = {};
         if (difyApiKey) body.difyConfig.apiKey = difyApiKey;
         if (conversationId)
           body.difyConfig.conversation_id = conversationId;
       }
+      const controller = new AbortController();
+      abortRef.current = controller;
       const res = await fetch('/api/gpt', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
+      abortRef.current = null;
       const data = await res.json();
       if (!res.ok) {
         console.error('Chat error', data.error || res.statusText);
         return;
+      }
+      if (provider === 'flowise') {
+        console.log('Received Flowise chat response', data);
       }
       if (data.reply) {
         const updated = [...history, { role: 'assistant', content: data.reply }];
@@ -115,7 +140,7 @@ const AzureTextChat = () => {
         setConversationId(data.conversation_id);
       }
     } catch (e) {
-      console.error(e);
+      if (e.name !== 'AbortError') console.error(e);
     }
     setSubmitting(false);
   };
@@ -231,6 +256,14 @@ const AzureTextChat = () => {
             className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
           >
             Send
+          </button>
+          <button
+            type="button"
+            onClick={stop}
+            disabled={!isSubmitting && !synthRef.current}
+            className="px-4 py-2 bg-red-600 text-white rounded disabled:opacity-50"
+          >
+            Stop
           </button>
           <button
             type="button"

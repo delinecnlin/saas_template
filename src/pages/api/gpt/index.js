@@ -38,6 +38,9 @@ export default async function handler(req, res) {
       const headers = { 'Content-Type': 'application/json' };
       if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
       const body = { question, history: messages };
+
+      console.log('Sending Flowise request', { url, body });
+
       const resp = await fetch(url, {
         method: 'POST',
         headers,
@@ -51,6 +54,7 @@ export default async function handler(req, res) {
           .json({ error: text || 'Failed to generate reply' });
       }
       const data = await resp.json();
+      console.log('Received Flowise response', data);
       const reply =
         data.answer || data.text || data.data || data.output || '';
       return res.status(200).json({ reply });
