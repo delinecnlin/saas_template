@@ -50,27 +50,69 @@ export default async function handler(req, res) {
     if (data.status === 'failed' && error) {
       console.error('Sora job failed', error);
     }
-    const videoUrl = findVideoUrl(data);
+
+    let remoteUrl = findVideoUrl(data);
     let localUrl = '';
-    if (data.status === 'succeeded' && videoUrl) {
+
+    if (data.status === 'succeeded') {
+      const generationId =
+        data.generations?.[0]?.id ||
+        data.data?.generations?.[0]?.id ||
+        data.result?.data?.[0]?.id;
       try {
-        const r = await fetch(videoUrl);
-        if (r.ok) {
-          const arrayBuffer = await r.arrayBuffer();
-          const videosDir = path.join(process.cwd(), 'public', 'generated', 'videos');
-          await fs.promises.mkdir(videosDir, { recursive: true });
-          const ext = path.extname(new URL(videoUrl).pathname) || '.mp4';
-          const filePath = path.join(videosDir, `${jobId}${ext}`);
-          await fs.promises.writeFile(filePath, Buffer.from(arrayBuffer));
-          localUrl = `/generated/videos/${jobId}${ext}`;
+        if (generationId) {
+          const dl = new URL(process.env.SORA_API_URL);
+          dl.pathname = dl.pathname.replace(
+            /jobs$/,
+            `${generationId}/content/video`
+          );
+          const videoResp = await fetch(dl.toString(), {
+            headers: { 'Api-Key': process.env.SORA_API_KEY },
+          });
+          if (videoResp.ok) {
+            const arrayBuffer = await videoResp.arrayBuffer();
+            const videosDir = path.join(
+              process.cwd(),
+              'public',
+              'generated',
+              'videos'
+            );
+            await fs.promises.mkdir(videosDir, { recursive: true });
+            const ctype = videoResp.headers.get('content-type') || '';
+            const ext = ctype.includes('webm')
+              ? '.webm'
+              : ctype.includes('mov')
+              ? '.mov'
+              : '.mp4';
+            const filePath = path.join(videosDir, `${generationId}${ext}`);
+            await fs.promises.writeFile(filePath, Buffer.from(arrayBuffer));
+            localUrl = `/generated/videos/${generationId}${ext}`;
+          }
+        } else if (remoteUrl) {
+          const r = await fetch(remoteUrl);
+          if (r.ok) {
+            const arrayBuffer = await r.arrayBuffer();
+            const videosDir = path.join(
+              process.cwd(),
+              'public',
+              'generated',
+              'videos'
+            );
+            await fs.promises.mkdir(videosDir, { recursive: true });
+            const ext = path.extname(new URL(remoteUrl).pathname) || '.mp4';
+            const filePath = path.join(videosDir, `${jobId}${ext}`);
+            await fs.promises.writeFile(filePath, Buffer.from(arrayBuffer));
+            localUrl = `/generated/videos/${jobId}${ext}`;
+          }
         }
       } catch (e) {
         console.error('Failed to download video', e);
       }
     }
+
     return res
       .status(200)
-      .json({ status: data.status, error, url: videoUrl, localUrl, data });
+      .json({ status: data.status, error, url: remoteUrl, localUrl, data });
   } catch (err) {
     console.error('Sora status error', err);
     return res.status(500).json({ error: 'Failed to get job status' });
