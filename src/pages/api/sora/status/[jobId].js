@@ -1,6 +1,24 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/server/auth';
 
+function findVideoUrl(obj) {
+  if (!obj || typeof obj !== 'object') return null;
+  for (const value of Object.values(obj)) {
+    if (
+      typeof value === 'string' &&
+      /^https?:/.test(value) &&
+      /(\.mp4$|\.mov$|\.webm$)/i.test(value)
+    ) {
+      return value;
+    }
+    if (value && typeof value === 'object') {
+      const nested = findVideoUrl(value);
+      if (nested) return nested;
+    }
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', ['GET']);
@@ -30,7 +48,8 @@ export default async function handler(req, res) {
     if (data.status === 'failed' && error) {
       console.error('Sora job failed', error);
     }
-    return res.status(200).json({ status: data.status, error, data });
+    const videoUrl = findVideoUrl(data);
+    return res.status(200).json({ status: data.status, error, url: videoUrl, data });
   } catch (err) {
     console.error('Sora status error', err);
     return res.status(500).json({ error: 'Failed to get job status' });

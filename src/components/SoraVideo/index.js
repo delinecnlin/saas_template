@@ -18,7 +18,9 @@ const SoraVideo = () => {
   }, []);
 
   const startPoll = (jobId) => {
+    let attempts = 0;
     pollRef.current = setInterval(async () => {
+      attempts += 1;
       try {
         const res = await fetch(`/api/sora/status/${jobId}`);
         if (!res.ok) {
@@ -31,14 +33,20 @@ const SoraVideo = () => {
         const data = await res.json();
         setStatus(data.status);
         if (data.status === 'succeeded') {
-          clearInterval(pollRef.current);
-          pollRef.current = null;
           const url =
+            data.url ||
             data.data?.generations?.[0]?.output?.[0]?.assets?.video ||
             data.data?.generations?.[0]?.assets?.video ||
             data.data?.result?.data?.[0]?.url ||
             data.data?.result?.data?.[0]?.asset_url;
-          if (url) setVideoUrl(url);
+          if (url) {
+            setVideoUrl(url);
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          } else if (attempts > 12) {
+            clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
         } else if (data.status === 'failed' || data.status === 'cancelled') {
           clearInterval(pollRef.current);
           pollRef.current = null;
