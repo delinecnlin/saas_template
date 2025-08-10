@@ -102,7 +102,7 @@ cp .env.sample .env
 - `DIFY_API_URL`、`DIFY_API_KEY`
 - `NEXT_PUBLIC_DIFY_API_KEY`
 
-前端表单会读取 `NEXT_PUBLIC_*` 变量作为初始值，若输入框留空则自动回退到服务器端对应的 `FLOWISE_*` 或 `DIFY_*` 配置。
+前端表单会读取 `NEXT_PUBLIC_*` 变量作为初始值，若输入框留空则自动回退到服务器端对应的 `FLOWISE_*` 或 `DIFY_*` 配置。界面提供 “Save” 按钮，可将当前选项保存到浏览器本地存储，刷新后仍会保留。
 
 确保安装语音 SDK 依赖：
 

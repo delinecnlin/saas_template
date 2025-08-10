@@ -32,6 +32,7 @@ const AzureTextChat = () => {
   const [difyApiKey, setDifyApiKey] = useState(
     process.env.NEXT_PUBLIC_DIFY_API_KEY || ''
   );
+  const [savedNotice, setSavedNotice] = useState('');
   const [conversationId, setConversationId] = useState(null);
   const messagesEndRef = useRef(null);
   const abortRef = useRef(null);
@@ -40,6 +41,27 @@ const AzureTextChat = () => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    const storedProvider = localStorage.getItem('agentProvider');
+    if (storedProvider) setProvider(storedProvider);
+    const storedFlowise = localStorage.getItem('flowiseConfig');
+    if (storedFlowise) {
+      try {
+        const cfg = JSON.parse(storedFlowise);
+        setFlowiseUrl(cfg.apiUrl || '');
+        setFlowiseChatflowId(cfg.chatflowId || '');
+        setFlowiseApiKey(cfg.apiKey || '');
+      } catch {}
+    }
+    const storedDify = localStorage.getItem('difyConfig');
+    if (storedDify) {
+      try {
+        const cfg = JSON.parse(storedDify);
+        setDifyApiKey(cfg.apiKey || '');
+      } catch {}
+    }
+  }, []);
 
   const getToken = async () => {
     const res = await fetch('/api/speech/token');
@@ -87,6 +109,24 @@ const AzureTextChat = () => {
       synthRef.current = null;
     }
     setSubmitting(false);
+  };
+
+  const saveSettings = () => {
+    localStorage.setItem('agentProvider', provider);
+    localStorage.setItem(
+      'flowiseConfig',
+      JSON.stringify({
+        apiUrl: flowiseUrl,
+        chatflowId: flowiseChatflowId,
+        apiKey: flowiseApiKey,
+      })
+    );
+    localStorage.setItem(
+      'difyConfig',
+      JSON.stringify({ apiKey: difyApiKey })
+    );
+    setSavedNotice('Saved');
+    setTimeout(() => setSavedNotice(''), 2000);
   };
 
   const sendMessage = async (content) => {
@@ -167,23 +207,51 @@ const AzureTextChat = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="mb-4 space-y-2">
+      <div className="mb-4 space-y-3">
         <div>
           <label className="block text-sm mb-1">Agent Provider</label>
-          <select
-            value={provider}
-            onChange={(e) => {
-              setProvider(e.target.value);
-              setConversationId(null);
-            }}
-            className="border rounded p-2"
-          >
-            <option value="flowise">Flowise</option>
-            <option value="dify">Dify</option>
-          </select>
+          <div className="flex items-center space-x-4">
+            <label className="flex items-center space-x-1">
+              <input
+                type="radio"
+                name="provider"
+                value="flowise"
+                checked={provider === 'flowise'}
+                onChange={(e) => {
+                  setProvider(e.target.value);
+                  setConversationId(null);
+                }}
+              />
+              <span>Flowise</span>
+            </label>
+            <label className="flex items-center space-x-1">
+              <input
+                type="radio"
+                name="provider"
+                value="dify"
+                checked={provider === 'dify'}
+                onChange={(e) => {
+                  setProvider(e.target.value);
+                  setConversationId(null);
+                }}
+              />
+              <span>Dify</span>
+            </label>
+            <button
+              type="button"
+              onClick={saveSettings}
+              className="px-2 py-1 border rounded"
+            >
+              Save
+            </button>
+            {savedNotice && (
+              <span className="text-sm text-green-600">{savedNotice}</span>
+            )}
+          </div>
         </div>
         {provider === 'flowise' && (
-          <div className="space-y-2">
+          <div className="space-y-2 border p-2 rounded">
+            <div className="text-sm font-semibold">Flowise Settings</div>
             <input
               className="border rounded p-2 w-full"
               placeholder="Flowise URL"
@@ -205,7 +273,8 @@ const AzureTextChat = () => {
           </div>
         )}
         {provider === 'dify' && (
-          <div className="space-y-2">
+          <div className="space-y-2 border p-2 rounded">
+            <div className="text-sm font-semibold">Dify Settings</div>
             <input
               className="border rounded p-2 w-full"
               placeholder="Dify API Key"
