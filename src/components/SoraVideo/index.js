@@ -34,6 +34,7 @@ const SoraVideo = () => {
         setStatus(data.status);
         if (data.status === 'succeeded') {
           const url =
+            data.localUrl ||
             data.url ||
             data.data?.generations?.[0]?.output?.[0]?.assets?.video ||
             data.data?.generations?.[0]?.assets?.video ||

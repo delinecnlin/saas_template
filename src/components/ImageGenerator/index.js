@@ -34,7 +34,9 @@ const ImageGenerator = () => {
       }
       const data = await res.json();
       if (res.ok) {
-        if (data.b64) {
+        if (data.localUrl) {
+          setImage(data.localUrl);
+        } else if (data.b64) {
           setImage(`data:image/${format};base64,${data.b64}`);
         } else if (data.url) {
           setImage(data.url);

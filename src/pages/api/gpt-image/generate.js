@@ -1,6 +1,8 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/server/auth';
 import { getImageConfig } from '@/lib/server/azureConfig';
+import fs from 'fs';
+import path from 'path';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -51,7 +53,28 @@ export default async function handler(req, res) {
     const first = data.data?.[0] || {};
     const b64 = first.b64_json || '';
     const urlOut = first.url || '';
-    return res.status(200).json({ b64, url: urlOut });
+    let localUrl = '';
+    try {
+      const imagesDir = path.join(process.cwd(), 'public', 'generated', 'images');
+      await fs.promises.mkdir(imagesDir, { recursive: true });
+      const ext = `.${output_format}`;
+      const fileName = `${Date.now()}${ext}`;
+      const filePath = path.join(imagesDir, fileName);
+      if (b64) {
+        await fs.promises.writeFile(filePath, Buffer.from(b64, 'base64'));
+        localUrl = `/generated/images/${fileName}`;
+      } else if (urlOut) {
+        const r = await fetch(urlOut);
+        if (r.ok) {
+          const arrayBuffer = await r.arrayBuffer();
+          await fs.promises.writeFile(filePath, Buffer.from(arrayBuffer));
+          localUrl = `/generated/images/${fileName}`;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to save image', e);
+    }
+    return res.status(200).json({ b64, url: urlOut, localUrl });
   } catch (err) {
     console.error('Image generation exception', err);
     return res.status(500).json({ error: 'Failed to generate image' });

@@ -1,5 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/server/auth';
+import fs from 'fs';
+import path from 'path';
 
 function findVideoUrl(obj) {
   if (!obj || typeof obj !== 'object') return null;
@@ -49,7 +51,26 @@ export default async function handler(req, res) {
       console.error('Sora job failed', error);
     }
     const videoUrl = findVideoUrl(data);
-    return res.status(200).json({ status: data.status, error, url: videoUrl, data });
+    let localUrl = '';
+    if (data.status === 'succeeded' && videoUrl) {
+      try {
+        const r = await fetch(videoUrl);
+        if (r.ok) {
+          const arrayBuffer = await r.arrayBuffer();
+          const videosDir = path.join(process.cwd(), 'public', 'generated', 'videos');
+          await fs.promises.mkdir(videosDir, { recursive: true });
+          const ext = path.extname(new URL(videoUrl).pathname) || '.mp4';
+          const filePath = path.join(videosDir, `${jobId}${ext}`);
+          await fs.promises.writeFile(filePath, Buffer.from(arrayBuffer));
+          localUrl = `/generated/videos/${jobId}${ext}`;
+        }
+      } catch (e) {
+        console.error('Failed to download video', e);
+      }
+    }
+    return res
+      .status(200)
+      .json({ status: data.status, error, url: videoUrl, localUrl, data });
   } catch (err) {
     console.error('Sora status error', err);
     return res.status(500).json({ error: 'Failed to get job status' });
