@@ -1,6 +1,5 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/server/auth';
-import { getGptConfig, gptDefaultParams } from '@/lib/server/azureConfig';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -13,47 +12,92 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  const { messages = [], model = 'gpt-4o', params = {} } = req.body || {};
-  const { apiKey, endpoint, deployment, apiVersion } = getGptConfig(model);
-
   const {
-    temperature = gptDefaultParams.temperature,
-    top_p = gptDefaultParams.top_p,
-    frequency_penalty = gptDefaultParams.frequency_penalty,
-    presence_penalty = gptDefaultParams.presence_penalty,
-    max_tokens = gptDefaultParams.max_tokens,
-  } = params;
+    messages = [],
+    provider = 'flowise',
+    flowiseConfig = {},
+    difyConfig = {},
+  } = req.body || {};
+
+  const lastMsg = messages.filter((m) => m.role === 'user').slice(-1)[0];
+  const question = lastMsg?.content || '';
 
   try {
-    const url = `${endpoint}/openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
-    const body = {
-      messages,
-      temperature,
-      top_p,
-      frequency_penalty,
-      presence_penalty,
-      max_tokens,
-    };
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': apiKey,
-      },
-      body: JSON.stringify(body),
-    });
+    if (provider === 'flowise') {
+      const apiUrl = flowiseConfig.apiUrl || process.env.FLOWISE_URL;
+      const chatflowId =
+        flowiseConfig.chatflowId || process.env.FLOWISE_CHATFLOW_ID;
+      const apiKey = flowiseConfig.apiKey || process.env.FLOWISE_API_KEY;
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      console.error('Azure OpenAI chat error', text);
-      return res.status(500).json({ error: 'Failed to generate reply' });
+      if (!apiUrl || !chatflowId) {
+        return res
+          .status(400)
+          .json({ error: 'Missing Flowise URL or chatflow ID' });
+      }
+      const url = `${apiUrl}/api/v1/prediction/${chatflowId}`;
+      const headers = { 'Content-Type': 'application/json' };
+      if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+      const body = { question, history: messages };
+
+      console.log('Sending Flowise request', { url, body });
+
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        console.error('Flowise chat error', text);
+        return res
+          .status(resp.status)
+          .json({ error: text || 'Failed to generate reply' });
+      }
+      const data = await resp.json();
+      console.log('Received Flowise response', data);
+      const reply =
+        data.answer || data.text || data.data || data.output || '';
+      return res.status(200).json({ reply });
     }
 
-    const data = await resp.json();
-    const reply = data.choices?.[0]?.message?.content || '';
-    return res.status(200).json({ reply });
+    if (provider === 'dify') {
+      const apiKey = difyConfig.apiKey || process.env.DIFY_API_KEY;
+      const apiUrl =
+        difyConfig.apiUrl || process.env.DIFY_API_URL || 'https://api.dify.ai/v1';
+      const { conversation_id } = difyConfig;
+
+      if (!apiKey) {
+        return res.status(400).json({ error: 'Missing Dify API key' });
+      }
+
+      const url = `${apiUrl}/chat-messages`;
+      const body = { inputs: {}, query: question };
+      if (conversation_id) body.conversation_id = conversation_id;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        console.error('Dify chat error', text);
+        return res
+          .status(resp.status)
+          .json({ error: text || 'Failed to generate reply' });
+      }
+      const data = await resp.json();
+      const reply = data.answer || data.output || '';
+      return res
+        .status(200)
+        .json({ reply, conversation_id: data.conversation_id });
+    }
+
+    return res.status(400).json({ error: 'Invalid provider' });
   } catch (err) {
-    console.error('Azure OpenAI chat exception', err);
+    console.error('Chat exception', err);
     return res.status(500).json({ error: 'Failed to generate reply' });
   }
 }
