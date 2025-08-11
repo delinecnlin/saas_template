@@ -37,10 +37,18 @@ export function getRealtimeConfig() {
 
 export function getImageConfig() {
   return {
-    endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+    endpoint:
+      process.env.AZURE_OPENAI_IMAGE_ENDPOINT ||
+      process.env.AZURE_OPENAI_REALTIME_ENDPOINT ||
+      process.env.AZURE_OPENAI_ENDPOINT,
     deployment:
-      process.env.AZURE_OPENAI_IMAGE_DEPLOYMENT || process.env.AZURE_OPENAI_DEPLOYMENT,
-    apiKey: process.env.AZURE_OPENAI_API_KEY,
+      process.env.AZURE_OPENAI_IMAGE_DEPLOYMENT ||
+      process.env.AZURE_OPENAI_REALTIME_DEPLOYMENT ||
+      process.env.AZURE_OPENAI_DEPLOYMENT,
+    apiKey:
+      process.env.AZURE_OPENAI_IMAGE_API_KEY ||
+      process.env.AZURE_REALTIME_KEY ||
+      process.env.AZURE_OPENAI_API_KEY,
     apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview',
   };
 }
