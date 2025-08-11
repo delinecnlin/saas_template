@@ -25,7 +25,8 @@ export default async function handler(req, res) {
     output_compression = 100,
   } = req.body || {};
   const { endpoint, deployment, apiKey, apiVersion } = getImageConfig();
-  const openaiKey = process.env.OPENAI_API_KEY;
+  const openaiKey =
+    process.env.OPENAI_API_KEY || process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
   try {
     let data;
@@ -57,12 +58,15 @@ export default async function handler(req, res) {
       data = await resp.json();
     } else if (openaiKey) {
       const client = new OpenAI({ apiKey: openaiKey });
+      const openaiQuality = quality === 'high' ? 'high' : 'standard';
+      let openaiSize = size;
+      if (size === '1024x1536') openaiSize = '1024x1792';
+      else if (size === '1536x1024') openaiSize = '1792x1024';
       data = await client.images.generate({
         model: 'gpt-image-1',
         prompt,
-        size,
-        quality,
-        n,
+        size: openaiSize,
+        quality: openaiQuality,
         response_format: 'b64_json',
       });
     } else {
