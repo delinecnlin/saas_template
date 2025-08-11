@@ -1,27 +1,6 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/server/auth';
 
-function getDimensions(aspect, res) {
-  const map = {
-    '16:9': {
-      '480p': { width: 854, height: 480 },
-      '720p': { width: 1280, height: 720 },
-      '1080p': { width: 1920, height: 1080 },
-    },
-    '9:16': {
-      '480p': { width: 480, height: 854 },
-      '720p': { width: 720, height: 1280 },
-      '1080p': { width: 1080, height: 1920 },
-    },
-    '1:1': {
-      '480p': { width: 480, height: 480 },
-      '720p': { width: 720, height: 720 },
-      '1080p': { width: 1080, height: 1080 },
-    },
-  };
-  return map[aspect]?.[res] || { width: 720, height: 720 };
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
@@ -35,18 +14,17 @@ export default async function handler(req, res) {
 
   const {
     prompt,
-    aspectRatio = '16:9',
-    resolution = '720p',
-    duration = 5,
-    variants = 1,
+    width = 1080,
+    height = 1080,
+    n_seconds = 5,
+    n_variants = 1,
   } = req.body || {};
 
   try {
-    const { width, height } = getDimensions(aspectRatio, resolution);
     const body = {
       prompt,
-      n_variants: String(variants),
-      n_seconds: String(duration),
+      n_variants: String(n_variants),
+      n_seconds: String(n_seconds),
       width: String(width),
       height: String(height),
       model: process.env.SORA_MODEL || 'sora',
@@ -64,10 +42,17 @@ export default async function handler(req, res) {
     if (!resp.ok) {
       const text = await resp.text();
       console.error('Sora generate failed', text);
-      return res.status(500).json({ error: 'Failed to start video generation' });
+      return res
+        .status(500)
+        .json({ error: text || 'Failed to start video generation' });
     }
 
     const data = await resp.json();
+    if (data.error) {
+      const msg = data.error?.message || data.error;
+      console.error('Sora generate returned error', msg);
+      return res.status(500).json({ error: msg });
+    }
     return res.status(200).json({ jobId: data.id, status: data.status, data });
   } catch (err) {
     console.error('Sora generate error', err);
