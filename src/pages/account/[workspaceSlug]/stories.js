@@ -6,7 +6,6 @@ import AzureRealtimeChat from '@/components/AzureRealtimeChat';
 import AzureTextChat from '@/components/AzureTextChat';
 import SoraVideo from '@/components/SoraVideo';
 import ImageGenerator from '@/components/ImageGenerator';
-import BingNews from '@/components/BingNews';
 
 function StoriesPage() {
   const router = useRouter();
@@ -56,12 +55,6 @@ function StoriesPage() {
           >
             Generate Image
           </button>
-          <button
-            className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
-            onClick={() => toggleChat('news')}
-          >
-            Bing News
-          </button>
           <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
             新建故事
           </button>
@@ -88,11 +81,6 @@ function StoriesPage() {
       {activeChat === 'image' && (
         <div className="mb-4 p-4 border rounded">
           <ImageGenerator />
-        </div>
-      )}
-      {activeChat === 'news' && (
-        <div className="mb-4 p-4 border rounded">
-          <BingNews />
         </div>
       )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
