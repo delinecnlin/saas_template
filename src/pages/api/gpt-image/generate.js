@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/server/auth';
 import { getImageConfig } from '@/lib/server/azureConfig';
+import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
 
@@ -24,32 +25,52 @@ export default async function handler(req, res) {
     output_compression = 100,
   } = req.body || {};
   const { endpoint, deployment, apiKey, apiVersion } = getImageConfig();
+  const openaiKey = process.env.OPENAI_API_KEY;
 
   try {
-    const url = `${endpoint}/openai/deployments/${deployment}/images/generations?api-version=${apiVersion}`;
-    const resp = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': apiKey,
-      },
-      body: JSON.stringify({
+    let data;
+
+    if (endpoint && deployment && apiKey) {
+      const url = `${endpoint}/openai/deployments/${deployment}/images/generations?api-version=${apiVersion}`;
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': apiKey,
+        },
+        body: JSON.stringify({
+          prompt,
+          size,
+          quality,
+          n,
+          output_format,
+          output_compression,
+        }),
+      });
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        console.error('Image generation error', text);
+        return res.status(500).json({ error: 'Failed to generate image' });
+      }
+
+      data = await resp.json();
+    } else if (openaiKey) {
+      const client = new OpenAI({ apiKey: openaiKey });
+      data = await client.images.generate({
+        model: 'gpt-image-1',
         prompt,
         size,
         quality,
         n,
-        output_format,
-        output_compression,
-      }),
-    });
-
-    if (!resp.ok) {
-      const text = await resp.text();
-      console.error('Image generation error', text);
-      return res.status(500).json({ error: 'Failed to generate image' });
+        response_format: 'b64_json',
+      });
+    } else {
+      return res
+        .status(500)
+        .json({ error: 'Image generation API key not configured' });
     }
 
-    const data = await resp.json();
     const first = data.data?.[0] || {};
     const b64 = first.b64_json || '';
     const urlOut = first.url || '';
