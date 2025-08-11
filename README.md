@@ -76,7 +76,7 @@ cp .env.sample .env
 
 - **Text Chat** (`/api/gpt`，可通过 `/api/gpt/params` 获取默认参数)；
 - **Realtime Chat**（`/api/realtime-config`）用于语音对话；
-- **图像生成** (`/api/gpt-image/generate`)、**Bing 新闻搜索** (`/api/bing-search`)、**语音服务** (`/api/speech/token`)；
+- **图像生成** (`/api/gpt-image/generate`)、**语音服务** (`/api/speech/token`)；
 - **Sora 视频生成** (`/api/sora/generate` 与 `/api/sora/status/[jobId]`)；
 
 这些功能均以按钮形式呈现，可在本地环境中直接体验。
@@ -116,8 +116,8 @@ npm install microsoft-cognitiveservices-speech-sdk
 
 本项目基于 Next.js 架构，前后端代码集中在 `src` 目录下，主要模块如下：
 
-- `src/components`：前端 UI 组件，包含可选 Flowise/Dify 的 **AzureTextChat**、**AzureRealtimeChat**、**BingNews**、**ImageGenerator** 和 **SoraVideo** 等。
-- `src/pages/api`：后端 API 路由，封装了 `/api/gpt`、`/api/realtime-config`、`/api/gpt-image/generate`、`/api/bing-search`、`/api/sora/*`、`/api/speech/token` 等服务。
+- `src/components`：前端 UI 组件，包含可选 Flowise/Dify 的 **AzureTextChat**、**AzureRealtimeChat**、**ImageGenerator** 和 **SoraVideo** 等。
+- `src/pages/api`：后端 API 路由，封装了 `/api/gpt`、`/api/realtime-config`、`/api/gpt-image/generate`、`/api/sora/*`、`/api/speech/token` 等服务。
 - `src/lib/server/azureConfig.js`：统一管理 Azure OpenAI、Realtime 及图像生成的配置，供各个 API 复用。
 
 ### Realtime Chat 代码逻辑
